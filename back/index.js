@@ -69,23 +69,19 @@ io.use((socket, next) => {
 
 let jugadores = {};
 let timers = {};
+let turnos = {};
 
 
 io.on("connection", (socket) => {
     const req = socket.request;
-
-
     socket.on('joinRoom', data => {
         console.log("🚀 ~ io.on ~ req.session.room:", data.room)
         if (req.session.room != undefined && req.session.room.length > 0)
             socket.leave(req.session.room);
         req.session.room = data.room;
         socket.join(data.room);
-
-
         io.to(req.session.room).emit('chat-messages', { user: req.session.user, room: data.room });
     });
-
 
     socket.on('pingAll', data => {
         console.log("PING ALL: ", data);
@@ -111,8 +107,15 @@ io.on("connection", (socket) => {
         socket.to(room).emit("updateColor", { color });
     });
 
-    socket.on('turnoCambio', ({ room, nuevoTurno }) => {
+    /*socket.on('turnoCambio', ({ room, nuevoTurno }) => {
         io.to(room).emit('cambiarTurno', nuevoTurno);
+    });*/
+
+    socket.on('turnoCambio', ({ room, nuevoTurno }) => {
+        turnos[room] = nuevoTurno;
+        io.to(room).emit('cambiarTurno', { room, nuevoTurno });
+        console.log(`🔄 Cambio de turno en ${room}: ${nuevoTurno}`);
+        reiniciarTemporizador(room);
     });
 
     socket.on('idJugadores', ({ room, id, idRival }) => {
@@ -125,42 +128,22 @@ io.on("connection", (socket) => {
             console.error("Una de las cartas es undefined:", carta, carta2);
             return;
         }
-
-
         console.log("Carta para el host:", carta);
         console.log("Carta para el oponente:", carta2);
-
-
         // Enviar la carta al host
         socket.emit("tu carta", { carta });
-
-
         // Enviar la carta al oponente
         socket.to(room).emit("carta del oponente", { carta2 });
-    });
-
-    socket.on("comenzarRonda", (roomId, personajes) => {
-        const jugadoresEnSala = getJugadoresPorSala(roomId);
-
-
-        if (!Array.isArray(personajes)) {
-            console.error("Personajes no es un array:", personajes);
-            return;
-        }
-
-
-        let cartasDisponibles = [...personajes];  // Los personajes vienen del frontend
-        socket.to(room).emit("cartaAsignada", { color });
-        jugadoresEnSala.forEach(jugador => {
-            const cartaAleatoria = cartasDisponibles.splice(Math.floor(Math.random() * cartasDisponibles.length), 1)[0];
-            io.to(jugador.id).emit("cartaAsignada", cartaAleatoria);  // Emitir la carta al jugador
-            console.log("Carta asignada a", jugador.id, cartaAleatoria);
-        });
     });
 
     socket.on('reiniciarTemporizador', (data) => {
         const { room } = data;  // Recibe la sala
         reiniciarTemporizador(room);  // Llama a la función de reiniciar temporizador
+    });
+
+    socket.on('iniciarTurno', ({ room, turnoInicial }) => {
+        turnos[room] = turnoInicial;
+        reiniciarTemporizador(room);
     });
 
 });
@@ -189,6 +172,7 @@ function reiniciarTemporizador(room) {
     io.to(room).emit('actualizarTemporizador', { timer: timers[room] });  // Emitir el temporizador actualizado
 }
 
+/*
 setInterval(() => {
     for (let room in timers) {
         if (timers[room] > 0) {
@@ -198,7 +182,28 @@ setInterval(() => {
             // Cuando el temporizador llega a 0, cambiar el turno
             //io.to(room).emit('cambiarTurno', { turnoSiguiente: 'jugador 2' });  // O 'jugador 1' dependiendo de la lógica
             io.to(room).emit('cambiarTurno', nuevoTurno);
-            reiniciarTemporizador(room);  // Reiniciar el temporizador
+            reiniciarTemporizador(room);
+        }
+    }
+}, 1000);
+*/
+
+setInterval(() => {
+    for (let room in timers) {
+        if (timers[room] > 0) {
+            timers[room]--;
+            io.to(room).emit('actualizarTemporizador', { timer: timers[room] });
+        } else {
+            // Calcular nuevo turno automáticamente
+            const turnoActual = turnos[room];
+            const nuevoTurno = turnoActual === 'jugador1' ? 'jugador2' : 'jugador1';
+
+            // Emitir el evento que ya existe
+            io.to(room).emit('cambiarTurno', { room, nuevoTurno });
+
+            // Reiniciar timer y guardar el nuevo turno
+            turnos[room] = nuevoTurno;
+            reiniciarTemporizador(room);
         }
     }
 }, 1000);
@@ -426,11 +431,6 @@ app.get('/scaloneta', async (req, res) => {
         });
     }
 });
-
-
-
-
-
 
 app.get('/random', async (req, res) => {
     try {

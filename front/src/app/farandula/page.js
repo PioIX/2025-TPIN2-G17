@@ -146,14 +146,12 @@ export default function Tablero() {
     useEffect(() => {
         if (!socket) return;
 
-
-        socket.on("cambiarTurno", (nuevoTurno) => {
-            console.log("El turno ha cambiado:", nuevoTurno);
-            setTurno(nuevoTurno);  // Cambiar el turno del jugador
+        socket.on("cambiarTurno", ({ room, nuevoTurno }) => {
+            console.log("🔄 El turno ha cambiado:", nuevoTurno);
+            setTurno(nuevoTurno); // Cambia el turno del jugador local
         });
 
-
-        return () => socket.off("turnoCambio");
+        return () => socket.off("cambiarTurno"); // Limpia el mismo evento
     }, [socket]);
 
 
@@ -172,7 +170,7 @@ export default function Tablero() {
         console.log("Mensaje enviado:", nuevo);
     }
 
-    function responder() {
+    function responder() { //hay un problema
         return (
             <>
                 <Boton
@@ -275,7 +273,7 @@ export default function Tablero() {
         socket.emit("colorChange", { room, color: nuevoColor });
 
         reiniciarTemporizador();
-  
+
     }
 
     useEffect(() => {
