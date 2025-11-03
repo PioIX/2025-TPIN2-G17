@@ -138,21 +138,6 @@ io.on("connection", (socket) => {
         socket.to(room).emit("updateColor", { color });
     });
 
-    socket.on("cartaRandom", ({ room, carta, carta2 }) => {
-        if (!carta || !carta2) {
-            console.error("Una de las cartas es undefined:", carta, carta2);
-            return;
-        }
-
-        console.log("Carta para el host:", carta);
-        console.log("Carta para el oponente:", carta2);
-
-        // Enviar la carta al host
-        socket.emit("tu carta", { carta });
-
-        // Enviar la carta al oponente
-        socket.to(room).emit("carta del oponente", { carta2 });
-    });
 
     socket.on("comenzarRonda", (roomId, personajes) => {
         const jugadoresEnSala = getJugadoresPorSala(roomId);
@@ -409,30 +394,43 @@ app.get('/scaloneta', async (req, res) => {
 
 
 
-app.get('/random', async (req, res) => {
-    try {
-        const personajesJugador1 = await realizarQuery(`
-                SELECT * FROM Personajes WHERE categoria_id = 1 ORDER BY RAND() LIMIT 1
-            `);
-        const personajesJugador2 = await realizarQuery(`
-                SELECT * FROM Personajes WHERE categoria_id = 1 ORDER BY RAND() LIMIT 1
-            `);
+app.get('/random/:partida_id/:jugador_id', async (req, res) => {
+    const { partida_id, jugador_id } = req.params;
 
-        if (!personajesJugador1 || personajesJugador1.length === 0 || !personajesJugador2 || personajesJugador2.length === 0) {
-            return res.json({ ok: false, mensaje: "No hay carta" });
+    try {
+        // Obtener la partida
+        const [partida] = await realizarQuery(`
+            SELECT * FROM Partidas WHERE ID = ${partida_id}
+        `);
+
+        if (!partida) {
+            return res.json({ ok: false, mensaje: "Partida no encontrada" });
         }
+
+        // Determinar si soy jugador1 o jugador2
+        const esJugador1 = parseInt(jugador_id) === partida.jugador1_id;
+
+        const miPersonajeId = esJugador1
+            ? partida.personaje_jugador1_id
+            : partida.personaje_jugador2_id;
+
+        // Obtener MI personaje
+        const [miPersonaje] = await realizarQuery(`
+            SELECT * FROM Personajes WHERE ID = ${miPersonajeId}
+        `);
+
+        if (!miPersonaje) {
+            return res.json({ ok: false, mensaje: "No se encontró el personaje" });
+        }
+
+        // Devolver en el mismo formato que antes
         res.json({
             ok: true,
-            carta: personajesJugador1.map(personajeJugador1 => ({
-                id: personajeJugador1.ID,
-                nombre: personajeJugador1.nombre,
-                foto: personajeJugador1.foto,
-            })),
-            carta2: personajesJugador2.map(personajeJugador2 => ({
-                id: personajeJugador2.ID,
-                nombre: personajeJugador2.nombre,
-                foto: personajeJugador2.foto,
-            }))
+            carta: [{
+                id: miPersonaje.ID,
+                nombre: miPersonaje.nombre,
+                foto: miPersonaje.foto,
+            }]
         });
 
     } catch (error) {

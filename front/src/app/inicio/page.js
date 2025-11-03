@@ -62,7 +62,7 @@ export default function LoginPage() {
                 if (result.esperando) {
 
                 } else {
-                    router.push(`/${result.nombreCategoria}`);
+                    router.replace(`/${result.nombreCategoria}`);
                 }
             }
         } catch (error) {
