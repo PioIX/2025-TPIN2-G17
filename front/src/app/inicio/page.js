@@ -66,7 +66,7 @@ export default function LoginPage() {
                 }
             }
         } catch (error) {
-            console.error(error);
+            console.log(error);
             alert("Error al conectar con el servidor");
         }
 
@@ -77,21 +77,28 @@ export default function LoginPage() {
     useEffect(() => {
         if (socket) {
             socket.on("partidaCreada", (data) => {
-                console.log("Evento recibido:", data);
+                console.log("📥 Evento recibido:", data);
+
+                const miId = Number(localStorage.getItem("ID"));
+                console.log("🔍 Mi ID:", miId, "| Host:", data.userHost);
 
                 if (data.ok && !data.esperando) {
                     if (data.partida_id) {
                         localStorage.setItem("partida_id", data.partida_id);
-                        console.log("partida_id guardado desde socket:", data.partida_id);
+                        console.log("partida_id guardado:", data.partida_id);
                     }
                     setMensaje("¡La partida ha comenzado!");
                     router.push(`/${data.nombreCategoria}`);
                 } else if (data.esperando) {
-                    if (Number(data.userHost) === localStorage.getItem("ID")) {
+                    if (data.userHost === miId) {
                         setMensaje("Esperando oponente...");
+                        alert("Esperando oponente...");
+                    } else {
+                        console.log("No soy el host");
                     }
                 }
             });
+
             return () => {
                 socket.off("partidaCreada");
             };

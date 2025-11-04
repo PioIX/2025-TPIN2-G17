@@ -313,60 +313,39 @@ export default function Tablero() {
     }, [socket]);
     */
 
-    useEffect(() => {
-        // Asegúrate de que socket esté disponible y la sala exista
-        const room = localStorage.getItem("room");
-        const carta = JSON.parse(localStorage.getItem("carta"));
-        const carta2 = JSON.parse(localStorage.getItem("carta2"));
-        if (room && socket) {
-            socket.emit("cartaRandom", room, carta, carta2);  // Emitir el evento al backend
-        }
-    }, [socket]);
-
-    useEffect(() => {
-        if (!socket) return;
-
-        // Recibe la carta del host
-        socket.on("tu carta", ({ carta }) => {
-            console.log("Tu carta (host):", carta);  // Aquí deberías ver la carta del host
-            setCartaAsignada(carta);  // Guardamos la carta del host en el estado
-        });
-
-        // Recibe la carta del oponente
-        socket.on("carta del oponente", ({ carta2 }) => {
-            console.log("Carta del oponente:", carta2);  // Aquí deberías ver la carta del oponente
-            setCartaAsignada2(carta2);  // Guardamos la carta del oponente en el estado
-        });
-
-        return () => {
-            socket.off("tu carta");
-            socket.off("carta del oponente");
-        };
-    }, [socket]);
 
     async function traerCarta() {
         try {
-            const response = await fetch("http://localhost:4000/random", {
+            const partida_id = localStorage.getItem("partida_id");
+            const jugador_id = localStorage.getItem("ID");
+
+            if (!partida_id || !jugador_id) {
+                console.error("Faltan partida_id o jugador_id");
+                return;
+            }
+
+            const response = await fetch(`http://localhost:4000/random?partida_id=${partida_id}&jugador_id=${jugador_id}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
+
             const data = await response.json();
             console.log("Data recibida del backend:", data);
 
             if (data.ok) {
-                //localStorage.setItem("personajesFarandula", JSON.stringify(data.personajes));
-                setCartaAsignada(data.carta);
-                setCartaAsignada2(data.carta2);
-                localStorage.setItem("carta", JSON.stringify(data.carta));
-                localStorage.setItem("carta2", JSON.stringify(data.carta2));
+                const carta = Array.isArray(data.carta) ? data.carta[0] : data.carta;
+
+                setCartaAsignada(carta);
+                localStorage.setItem("carta", JSON.stringify(carta));
+
+                console.log("Mi carta asignada:", carta);
             } else {
-                setCartaAsignada([]);
-                setCartaAsignada2([]);
+                setCartaAsignada(null);
+                console.error("Error:", data.mensaje);
             }
         } catch (error) {
             console.error("Error al traer cartas:", error);
-            setCartaAsignada([]);
-            setCartaAsignada2([]);
+            setCartaAsignada(null);
         }
     }
 
@@ -413,15 +392,15 @@ export default function Tablero() {
             <Boton color={"wpp"} texto={"Arriesgar"} onClick={arriesgar}></Boton>
 
             <div className={styles.carta}>
-                {cartaAsignada.map((p) => (
+                {cartaAsignada && (
                     <BotonImagen
-                        key={p.id}
-                        imagen={`/${p.foto}`}
-                        texto={p.nombre}
-                        onClick={() => handleClick(p.id)}
-                        className={descartadas.includes(p.id) ? styles.descartada : ""}
+                        key={cartaAsignada.id}
+                        imagen={`/${cartaAsignada.foto}`}
+                        texto={cartaAsignada.nombre}
+                        onClick={() => handleClick(cartaAsignada.id)}
+                        className={descartadas.includes(cartaAsignada.id) ? styles.descartada : ""}
                     />
-                ))}
+                )}
             </div>
 
             <div className={styles.footer}>

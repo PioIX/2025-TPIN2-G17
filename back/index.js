@@ -394,11 +394,14 @@ app.get('/scaloneta', async (req, res) => {
 
 
 
-app.get('/random/:partida_id/:jugador_id', async (req, res) => {
-    const { partida_id, jugador_id } = req.params;
+app.get('/random', async (req, res) => {
+    const { partida_id, jugador_id } = req.query;
 
     try {
-        // Obtener la partida
+        if (!partida_id || !jugador_id) {
+            return res.json({ ok: false, mensaje: "Faltan parámetros" });
+        }
+
         const [partida] = await realizarQuery(`
             SELECT * FROM Partidas WHERE ID = ${partida_id}
         `);
@@ -407,14 +410,12 @@ app.get('/random/:partida_id/:jugador_id', async (req, res) => {
             return res.json({ ok: false, mensaje: "Partida no encontrada" });
         }
 
-        // Determinar si soy jugador1 o jugador2
         const esJugador1 = parseInt(jugador_id) === partida.jugador1_id;
 
         const miPersonajeId = esJugador1
             ? partida.personaje_jugador1_id
             : partida.personaje_jugador2_id;
 
-        // Obtener MI personaje
         const [miPersonaje] = await realizarQuery(`
             SELECT * FROM Personajes WHERE ID = ${miPersonajeId}
         `);
@@ -423,7 +424,6 @@ app.get('/random/:partida_id/:jugador_id', async (req, res) => {
             return res.json({ ok: false, mensaje: "No se encontró el personaje" });
         }
 
-        // Devolver en el mismo formato que antes
         res.json({
             ok: true,
             carta: [{
@@ -658,6 +658,7 @@ app.post('/agregarUsuario', async function (req, res) {
     }
 });
 
+/*
 app.post('/cartarandom', async function (req, res) {
     console.log(req.body);
 
@@ -691,7 +692,7 @@ app.post('/cartarandom', async function (req, res) {
         res.status(500).send({ agregado: false, error: "Error en el servidor" });
     }
 });
-
+*/
 
 //BORRAR USUARIO
 app.delete('/borrarUsuario', async function (req, res) {
