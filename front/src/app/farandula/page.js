@@ -28,6 +28,7 @@ export default function Tablero() {
     const [descartadas, setDescartadas] = useState([]);
     const [cartaAsignada, setCartaAsignada] = useState([]);
     const [cartaAsignada2, setCartaAsignada2] = useState([]);
+    const [contador, setContador] = useState(0)
     const [turno, setTurno] = useState("jugador1");  // Define cuál jugador tiene el turno
     const [idPropio, setIdPropio] = useState();
     const [idRival, setIdRival] = useState();
@@ -204,14 +205,21 @@ export default function Tablero() {
     }, [socket])
 
     async function arriesgar() {
-        // Verificación de que el nombre no esté vacío
         if (nombreArriesgado.trim() === "") {
             alert("Ingresá un nombre antes de arriesgar");
             return;
         }
 
+        const jugadorId = localStorage.getItem("ID");
 
-        setLoading(true);  // Inicia el estado de carga
+        setLoading(true);
+        const partida_id = localStorage.getItem("partida_id");
+        console.log("esta es la partida en curso: ", partida_id)
+
+        console.log("🔍 partida_id desde localStorage:", partida_id);
+        console.log("🔍 miJugadorId:", jugadorId);
+        console.log("🔍 nombreArriesgado:", nombreArriesgado);
+        console.log("🔍 Todo el localStorage:", localStorage);
 
 
         try {
@@ -219,7 +227,7 @@ export default function Tablero() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    id_partida: partida.ID, 
+                    id_partida: partida_id,
                     id_jugador: jugadorId,
                     nombre_arriesgado: nombreArriesgado
                 }),
@@ -234,21 +242,21 @@ export default function Tablero() {
 
 
             // Actualizar el mensaje en el estado
-            setMensaje(result.msg);
+            setMensaje(result.mensaje);
 
 
             if (result.ok) {
-                if (result.ganador) {
-                    setMensaje(`¡Felicidades, ganaste! El personaje correcto era ${nombreArriesgado}.`);
+                if (result.gano) {
+                    alert(`¡Ganaste! El personaje correcto era ${result.personajeCorrecto}.`);
                 } else {
-                    setMensaje(`Perdiste. El personaje correcto era ${result.personajeCorrecto}.`);
+                    alert(`Perdiste. El personaje correcto era ${result.personajeCorrecto}.`);
                 }
 
 
                 // Si el jugador ganó o perdió, redirigir a la página de inicio
                 router.push("/inicio");
             } else {
-                setMensaje("Hubo un problema al realizar el arriesgue.");
+                alert("Hubo un problema al realizar el arriesgue.");
             }
         } catch (error) {
             console.error(error);
@@ -258,6 +266,41 @@ export default function Tablero() {
 
         setLoading(false);
     }
+
+    useEffect(() => {
+        console.log("🔍 Verificando localStorage al cargar página:");
+        console.log("partida_id:", localStorage.getItem("partida_id"));
+        console.log("ID:", localStorage.getItem("ID"));
+        console.log("room:", localStorage.getItem("room"));
+
+        const partidaId = localStorage.getItem("partida_id");
+        if (!partidaId) {
+            console.error("No hay partida_id en localStorage!");
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!socket) return;
+        socket.on("partidaFinalizada", (data) => {
+            console.log("📥 Partida finalizada:", data);
+
+            const miId = Number(localStorage.getItem("ID"));
+
+            if (data.ganador_id === miId) {
+                alert(`¡Ganaste! El personaje correcto era ${data.personajeCorrecto}.`);
+            } else if (data.perdedor_id === miId) {
+                alert(`Perdiste. El personaje correcto era ${data.personajeCorrecto}.`);
+            }
+
+            localStorage.removeItem("partida_id");
+            localStorage.removeItem("room");
+            router.push("/inicio");
+        });
+
+        return () => {
+            socket.off("partidaFinalizada");
+        };
+    }, [socket, router]);
 
     function checkeado(event) {
         const value = event.target.value;
@@ -295,66 +338,69 @@ export default function Tablero() {
         return () => socket.off("updateColor");
     }, [socket]);
 
+    // carta random
+    /*
+
     useEffect(() => {
         // Asegúrate de que socket esté disponible y la sala exista
         const room = localStorage.getItem("room");
-        const carta = JSON.parse(localStorage.getItem("carta"));
-        const carta2 = JSON.parse(localStorage.getItem("carta2"));
+        const personajes = JSON.parse(localStorage.getItem("personajesFarandula"));
         if (room && socket) {
-            socket.emit("cartaRandom", room, carta, carta2);  // Emitir el evento al backend
+            console.log("Personajes:", personajes);  // Verifica que sea un array
+            socket.emit("comenzarRonda", room, personajes);  // Emitir el evento al backend
         }
-    }, [socket]);
+    }, [socket]);  // Solo se ejecuta cuando el socket está disponible
 
 
     useEffect(() => {
         if (!socket) return;
 
-
-        // Recibe la carta del host
-        socket.on("tu carta", ({ carta }) => {
-            console.log("Tu carta (host):", carta);  // Aquí deberías ver la carta del host
-            setCartaAsignada(carta);  // Guardamos la carta del host en el estado
+        socket.on("cartaAsignada", (carta) => {
+            console.log("Tu carta asignada es:", carta);  // Verifica que la carta se reciba correctamente
+            setCartaAsignada(carta);  // Asigna la carta al jugador
         });
-
-
-        // Recibe la carta del oponente
-        socket.on("carta del oponente", ({ carta2 }) => {
-            console.log("Carta del oponente:", carta2);  // Aquí deberías ver la carta del oponente
-            setCartaAsignada2(carta2);  // Guardamos la carta del oponente en el estado
-        });
-
 
         return () => {
-            socket.off("tu carta");
-            socket.off("carta del oponente");
+            socket.off("cartaAsignada");  // Limpiar el evento cuando el componente se desmonte
         };
     }, [socket]);
+    */
+
 
 
     async function traerCarta() {
         try {
-            const response = await fetch("http://localhost:4000/random", {
+            const partida_id = localStorage.getItem("partida_id");
+            const jugador_id = localStorage.getItem("ID");
+
+            if (!partida_id || !jugador_id) {
+                console.error("Faltan partida_id o jugador_id");
+                return;
+            }
+
+            const response = await fetch(`http://localhost:4000/random?partida_id=${partida_id}&jugador_id=${jugador_id}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
+
             const data = await response.json();
             console.log("Data recibida del backend:", data);
 
 
             if (data.ok) {
-                //localStorage.setItem("personajesFarandula", JSON.stringify(data.personajes));
-                setCartaAsignada(data.carta);
-                setCartaAsignada2(data.carta2);
-                localStorage.setItem("carta", JSON.stringify(data.carta));
-                localStorage.setItem("carta2", JSON.stringify(data.carta2));
+                const carta = Array.isArray(data.carta) ? data.carta[0] : data.carta;
+
+                setCartaAsignada(carta);
+                localStorage.setItem("carta", JSON.stringify(carta));
+
+                console.log("Mi carta asignada:", carta);
             } else {
-                setCartaAsignada([]);
-                setCartaAsignada2([]);
+                setCartaAsignada(null);
+                console.error("Error:", data.mensaje);
             }
         } catch (error) {
             console.error("Error al traer cartas:", error);
-            setCartaAsignada([]);
-            setCartaAsignada2([]);
+            setCartaAsignada(null);
         }
     }
 
@@ -419,30 +465,19 @@ export default function Tablero() {
                 ) : null}
             </div>
 
-            {/* Input de arriesgar, visible para ambos jugadores */}
-            <Input
-                type="text"
-                placeholder="Arriesgar"
-                id="arriesgar"
-                color="registro"
-                onChange={(e) => setNombreArriesgado(e.target.value)}
-            />
-            <Boton onClick={arriesgar} color="arriesgar">
-                Texto={"Arriesgar"}
-            </Boton>
-
+            <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)}></Input>
+            <Boton color={"wpp"} texto={"Arriesgar"} onClick={arriesgar}></Boton>
 
             <div className={styles.carta}>
-                <h2>Tu carta:</h2>
-                {cartaAsignada.map((p) => (
+                {cartaAsignada && (
                     <BotonImagen
-                        key={p.id}
-                        imagen={`/${p.foto}`}
-                        texto={p.nombre}
-                        onClick={() => handleClick(p.id)}
-                        className={descartadas.includes(p.id) ? styles.descartada : ""}
+                        key={cartaAsignada.id}
+                        imagen={`/${cartaAsignada.foto}`}
+                        texto={cartaAsignada.nombre}
+                        onClick={() => handleClick(cartaAsignada.id)}
+                        className={descartadas.includes(cartaAsignada.id) ? styles.descartada : ""}
                     />
-                ))}
+                )}
             </div>
 
 
