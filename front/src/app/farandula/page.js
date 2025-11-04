@@ -219,13 +219,16 @@ export default function Tablero() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    id_partida: partida.ID,
+                    id_partida: partida.ID, 
                     id_jugador: jugadorId,
                     nombre_arriesgado: nombreArriesgado
                 }),
             });
 
-
+            //aca
+            localStorage.setItem("partida", JSON.stringify(partida.ID))
+            const partidaa = JSON.parse(localStorage.getItem("partida"));
+            console.log("Partida almacenada en localStorage:", partidaa);
             // Parsear la respuesta a JSON
             const result = await res.json();
 

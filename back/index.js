@@ -888,12 +888,6 @@ app.post('/crearPartida', async (req, res) => {
 });
 
 
-
-
-
-
-
-
 //arriesgar personaje
 
 
@@ -938,7 +932,19 @@ app.post("/arriesgar", async (req, res) => {
     }
 });
 
+//salir de partida
+app.put('/salir', async function(req, res) {
+    const id_partida = req.body;
+    try {
+        await realizarQuery(`UPDATE Partidas SET
+            estado='finalizada', WHERE ID = ${req.body.id};`);
 
+        res.send({ ok: true, mensaje: "Frase modificada correctamente" });
+    } catch (e) {
+        console.log("ERROR:", e.message);
+        res.send({ ok: false, mensaje: "Error en la modificación", error: e.message });
+    }
+});
 
 
 
