@@ -175,6 +175,18 @@ io.on("connection", (socket) => {
         io.to(req.session.room).emit("rendirse", { mensaje: "Se desconecto el rival" })
     })
 
+    socket.on('turnoCambio', ({ room, nuevoTurno }) => {
+        turnos[room] = nuevoTurno;
+        io.to(room).emit('cambiarTurno', { room, nuevoTurno });
+        console.log(`🔄 Cambio de turno en ${room}: ${nuevoTurno}`);
+        reiniciarTemporizador(room);
+    });
+
+    socket.on('idJugadores', ({ room, id, idRival }) => {
+        console.log({ room, id, idRival })
+        io.to(room).emit('idRival', { id: id, idRival: idRival });
+    });
+
 });
 //                SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
 app.get('/', function (req, res) {
@@ -200,22 +212,6 @@ function reiniciarTemporizador(room) {
     timers[room] = 60;  // Reinicia el temporizador a 60 segundos
     io.to(room).emit('actualizarTemporizador', { timer: timers[room] });  // Emitir el temporizador actualizado
 }
-
-/*
-setInterval(() => {
-    for (let room in timers) {
-        if (timers[room] > 0) {
-            timers[room]--;  // Disminuir el temporizador cada segundo
-            io.to(room).emit('actualizarTemporizador', { timer: timers[room] });
-        } else {
-            // Cuando el temporizador llega a 0, cambiar el turno
-            //io.to(room).emit('cambiarTurno', { turnoSiguiente: 'jugador 2' });  // O 'jugador 1' dependiendo de la lógica
-            io.to(room).emit('cambiarTurno', nuevoTurno);
-            reiniciarTemporizador(room);
-        }
-    }
-}, 1000);
-*/
 
 setInterval(() => {
     for (let room in timers) {
@@ -1017,7 +1013,7 @@ app.post("/arriesgar", async (req, res) => {
 });
 
 //salir de partida
-app.put('/salir', async function(req, res) {
+app.put('/salir', async function (req, res) {
     const id_partida = req.body;
     try {
         await realizarQuery(`UPDATE Partidas SET
