@@ -391,7 +391,7 @@ export default function Tablero() {
             </div>
 
             <div className={styles.botonesRespuestas}>
-                {(turno === "jugador1" && jugador == "jugador1") || (turno === "jugador2" && jugador == "jugador2") ? (
+                {(turno === "jugador1" && jugador === "jugador1") || (turno === "jugador2" && jugador === "jugador2") ? (
                     <>
                         {/* Si es el turno del jugador, mostrar el input para hacer una pregunta */}
                         <Input
@@ -408,7 +408,7 @@ export default function Tablero() {
                             }}
                         />
                     </>
-                ) : (turno === "jugador2" && jugador == "jugador1") || (turno === "jugador1" && jugador == "jugador2") ? (
+                ) : (turno === "jugador2" && jugador === "jugador1") || (turno === "jugador1" && jugador === "jugador2") ? (
                     <>
                         {/* Si es el turno del oponente, mostrar los botones de respuesta */}
                         {responder()}
