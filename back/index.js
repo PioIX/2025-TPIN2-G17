@@ -6,23 +6,29 @@ const path = require('path');
 const { realizarQuery } = require('./modulos/mysql');
 const { Console } = require('console');
 
+
 var app = express(); //Inicializo express
 const port = process.env.PORT || 4000;                              // Puerto por el que estoy ejecutando la página Web
 
+
 // Asegurate de exponer la carpeta front para acceder a las imágenes
 app.use(express.static(path.join(__dirname, './front'))); // o './front' si estás adentro del mismo nivel
+
 
 // Convierte una petición recibida (POST-GET...) a objeto JSON
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+
 app.use(cors());
+
 
 //Pongo el servidor a escuchar
 const server = app.listen(port, function () {
     console.log(`Server running in http://localhost:${port}
         `);
 });
+
 
 const io = require('socket.io')(server, {
     cors: {
@@ -35,6 +41,9 @@ const io = require('socket.io')(server, {
 
 
 
+
+
+
 const sessionMiddleware = session({
     //Elegir tu propia key secreta
     secret: "supersarasa",
@@ -42,11 +51,14 @@ const sessionMiddleware = session({
     saveUninitialized: false
 });
 
+
 app.use(sessionMiddleware);
+
 
 io.use((socket, next) => {
     sessionMiddleware(socket.request, {}, next);
 });
+
 
 /*
     A PARTIR DE ACÁ LOS EVENTOS DEL SOCKET
@@ -54,18 +66,20 @@ io.use((socket, next) => {
     A PARTIR DE ACÁ LOS EVENTOS DEL SOCKET
 */
 
+
 let jugadores = {};
+let timers = {};
+let turnos = {};
+
 
 io.on("connection", (socket) => {
     const req = socket.request;
-
     socket.on('joinRoom', data => {
         console.log("🚀 ~ io.on ~ req.session.room:", data.room)
         if (req.session.room != undefined && req.session.room.length > 0)
             socket.leave(req.session.room);
         req.session.room = data.room;
         socket.join(data.room);
-
         io.to(req.session.room).emit('chat-messages', { user: req.session.user, room: data.room });
 
         socket.on("user_navigated_back", async ({ partida_id, jugador_id }) => {
@@ -131,6 +145,9 @@ io.on("connection", (socket) => {
     });
 
 
+    socket.on('disconnect', () => {
+        console.log("Disconnect");
+    })
 
 
     socket.on("colorChange", ({ room, color }) => {
@@ -139,21 +156,14 @@ io.on("connection", (socket) => {
     });
 
 
-    socket.on("comenzarRonda", (roomId, personajes) => {
-        const jugadoresEnSala = getJugadoresPorSala(roomId);
+    socket.on('reiniciarTemporizador', (data) => {
+        const { room } = data;  // Recibe la sala
+        reiniciarTemporizador(room);  // Llama a la función de reiniciar temporizador
+    });
 
-        if (!Array.isArray(personajes)) {
-            console.error("Personajes no es un array:", personajes);
-            return;
-        }
-
-        let cartasDisponibles = [...personajes];  // Los personajes vienen del frontend
-        socket.to(room).emit("cartaAsignada", { color });
-        jugadoresEnSala.forEach(jugador => {
-            const cartaAleatoria = cartasDisponibles.splice(Math.floor(Math.random() * cartasDisponibles.length), 1)[0];
-            io.to(jugador.id).emit("cartaAsignada", cartaAleatoria);  // Emitir la carta al jugador
-            console.log("Carta asignada a", jugador.id, cartaAleatoria);
-        });
+    socket.on('iniciarTurno', ({ room, turnoInicial }) => {
+        turnos[room] = turnoInicial;
+        reiniciarTemporizador(room);
     });
 
     socket.on("finalizarPartida", data => {
@@ -173,9 +183,11 @@ app.get('/', function (req, res) {
     });
 });
 
+
 function getJugadoresPorSala(roomId) {
     return jugadores[roomId] || [];
 }
+
 
 /**
  * req = request. en este objeto voy a tener todo lo que reciba del cliente
@@ -183,13 +195,54 @@ function getJugadoresPorSala(roomId) {
  */
 
 
-//login
+//timer
+function reiniciarTemporizador(room) {
+    timers[room] = 60;  // Reinicia el temporizador a 60 segundos
+    io.to(room).emit('actualizarTemporizador', { timer: timers[room] });  // Emitir el temporizador actualizado
+}
 
+/*
+setInterval(() => {
+    for (let room in timers) {
+        if (timers[room] > 0) {
+            timers[room]--;  // Disminuir el temporizador cada segundo
+            io.to(room).emit('actualizarTemporizador', { timer: timers[room] });
+        } else {
+            // Cuando el temporizador llega a 0, cambiar el turno
+            //io.to(room).emit('cambiarTurno', { turnoSiguiente: 'jugador 2' });  // O 'jugador 1' dependiendo de la lógica
+            io.to(room).emit('cambiarTurno', nuevoTurno);
+            reiniciarTemporizador(room);
+        }
+    }
+}, 1000);
+*/
+
+setInterval(() => {
+    for (let room in timers) {
+        if (timers[room] > 0) {
+            timers[room]--;
+            io.to(room).emit('actualizarTemporizador', { timer: timers[room] });
+        } else {
+            // Calcular nuevo turno automáticamente
+            const turnoActual = turnos[room];
+            const nuevoTurno = turnoActual === 'jugador1' ? 'jugador2' : 'jugador1';
+
+            // Emitir el evento que ya existe
+            io.to(room).emit('cambiarTurno', { room, nuevoTurno });
+
+            // Reiniciar timer y guardar el nuevo turno
+            turnos[room] = nuevoTurno;
+            reiniciarTemporizador(room);
+        }
+    }
+}, 1000);
+
+//login
 app.post('/login', async function (req, res) {
     console.log(req.body);
     try {
         const resultado = await realizarQuery(`
-            SELECT * FROM Usuarios 
+            SELECT * FROM Usuarios
             WHERE nombre = '${req.body.nombre}' AND contraseña = '${req.body.contraseña}'
         `);
         if (resultado.length != 0) {
@@ -202,6 +255,7 @@ app.post('/login', async function (req, res) {
             res.send({ message: "Error, no se encontró ningun usuario" })
         }
 
+
     } catch (error) {
         res.send({
             ok: false,
@@ -211,11 +265,13 @@ app.post('/login', async function (req, res) {
     }
 });
 
+
 //registro
 app.post('/registro', async function (req, res) {
     try {
         console.log(req.body)
         vector = await realizarQuery(`SELECT * FROM Usuarios WHERE nombre='${req.body.nombre}'`)
+
 
         if (vector.length == 0) {
             realizarQuery(`
@@ -235,6 +291,7 @@ app.post('/registro', async function (req, res) {
     }
 })
 
+
 app.post("/chats", async function (req, res) {
     try {
         console.log(req.body)
@@ -247,6 +304,7 @@ app.post("/chats", async function (req, res) {
             AND Chats.nombre != ""
             AND (Chats.es_grupo = 1 OR Chats.es_grupo = 0)
 
+
         `);
         res.send(resultado);
     } catch (error) {
@@ -258,9 +316,11 @@ app.post("/chats", async function (req, res) {
     }
 });
 
+
 app.post("/traerUsuarios", async function (req, res) {
     try {
         console.log("BODY:", req.body);
+
 
         const resultado = await realizarQuery(`
             SELECT u.ID, u.nombre, upc.id_chat, u.foto_perfil
@@ -275,6 +335,7 @@ app.post("/traerUsuarios", async function (req, res) {
             AND (u.nombre != "" AND u.nombre IS NOT NULL)
         `);
 
+
         console.log("RESULTADO:", resultado);
         res.send(resultado);
     } catch (error) {
@@ -282,6 +343,7 @@ app.post("/traerUsuarios", async function (req, res) {
         res.send({ ok: false, mensaje: "Error en el servidor", error: error.message });
     }
 });
+
 
 //JUEGO
 app.get('/farandula', async (req, res) => {
@@ -301,6 +363,7 @@ app.get('/farandula', async (req, res) => {
             }))
         });
 
+
     } catch (error) {
         console.error("Error en la consulta:", error);
         res.status(500).json({
@@ -310,6 +373,7 @@ app.get('/farandula', async (req, res) => {
         });
     }
 });
+
 
 app.get('/famosos', async (req, res) => {
     try {
@@ -328,6 +392,7 @@ app.get('/famosos', async (req, res) => {
             }))
         });
 
+
     } catch (error) {
         console.error("Error en la consulta:", error);
         res.status(500).json({
@@ -337,6 +402,7 @@ app.get('/famosos', async (req, res) => {
         });
     }
 });
+
 
 app.get('/cantantes', async (req, res) => {
     try {
@@ -355,6 +421,7 @@ app.get('/cantantes', async (req, res) => {
             }))
         });
 
+
     } catch (error) {
         console.error("Error en la consulta:", error);
         res.status(500).json({
@@ -364,6 +431,7 @@ app.get('/cantantes', async (req, res) => {
         });
     }
 });
+
 
 app.get('/scaloneta', async (req, res) => {
     try {
@@ -382,6 +450,7 @@ app.get('/scaloneta', async (req, res) => {
             }))
         });
 
+
     } catch (error) {
         console.error("Error en la consulta:", error);
         res.status(500).json({
@@ -391,8 +460,6 @@ app.get('/scaloneta', async (req, res) => {
         });
     }
 });
-
-
 
 app.get('/random', async (req, res) => {
     const { partida_id, jugador_id } = req.query;
@@ -433,6 +500,7 @@ app.get('/random', async (req, res) => {
             }]
         });
 
+
     } catch (error) {
         console.error("Error en la consulta:", error);
         res.status(500).json({
@@ -443,28 +511,33 @@ app.get('/random', async (req, res) => {
     }
 });
 
+
 //agregar chats
 app.post("/agregarChat", async function (req, res) {
     try {
         let chatId;
 
+
         if (req.body.es_grupo == 1) {
             const nombre = req.body.nombre ?? "Grupo sin nombre";
             // Insertar el grupo
             const resultado = await realizarQuery(`
-        
+       
                 INSERT INTO Chats (es_grupo, foto, nombre, descripcion_grupo)
                 VALUES (1, '${req.body.foto}', '${req.body.nombre}', '${req.body.descripcion_grupo}')
             `);
 
+
             chatId = resultado.insertId;
+
 
             // Insertar al creador del grupo
             await realizarQuery(`
-        
+       
             INSERT INTO UsuariosPorChat (id_chat, id_usuario)
             VALUES (${chatId}, ${req.body.id_usuario})
             `);
+
 
             // Insertar a los demás usuarios por mail
             for (const mail of req.body.mails) {
@@ -480,7 +553,9 @@ app.post("/agregarChat", async function (req, res) {
                 }
             }
 
+
             console.log(chatId)
+
 
         } else {
             // Insertar chat individual (campos vacíos salvo es_grupo = 0)
@@ -490,11 +565,13 @@ app.post("/agregarChat", async function (req, res) {
       `);
             chatId = resultado.insertId;
 
+
             // obtener id del otro usuario por mail
             const usuarios = await realizarQuery(`
         SELECT ID FROM Usuarios WHERE usuario_mail = '${req.body.mail}'
       `);
             const otroUsuarioId = usuarios[0].ID;
+
 
             // vincular usuarios al chat
             await realizarQuery(`
@@ -502,6 +579,7 @@ app.post("/agregarChat", async function (req, res) {
         VALUES (${chatId}, ${req.body.id_usuario}), (${chatId}, ${otroUsuarioId})
       `);
         }
+
 
         res.send({ ok: true, id_chat: chatId });
     } catch (error) {
@@ -513,6 +591,7 @@ app.post("/agregarChat", async function (req, res) {
     }
 });
 
+
 //traer contactos
 app.post('/contacto', async (req, res) => {
     try {
@@ -522,12 +601,15 @@ app.post('/contacto', async (req, res) => {
             INNER JOIN UsuariosPorChat ON UsuariosPorChat.id_chat = Chats.ID
             WHERE UsuariosPorChat.id_usuario = "${req.body.id_usuario}"
 
+
         `);
+
 
         if (contactos.length === 0) {
             return res.send({ ok: false, mensaje: "No se encontró el contacto" });
         }
         const contacto = contactos[0];
+
 
         res.send({
             ok: true,
@@ -536,6 +618,7 @@ app.post('/contacto', async (req, res) => {
                 nombre: contacto.nombre,
             }
         });
+
 
     } catch (error) {
         res.status(500).send({
@@ -546,14 +629,17 @@ app.post('/contacto', async (req, res) => {
     }
 });
 
+
 //eliminar contactos
 app.post('/eliminarContacto', async function (req, res) {
     try {
         const { id_chat, id_usuario } = req.body;
 
+
         await realizarQuery(
             `DELETE FROM UsuariosPorChat WHERE id_chat=${id_chat} AND id_usuario=${id_usuario}`
         );
+
 
         res.send({ ok: true, mensaje: "Contacto eliminado del chat" });
     } catch (error) {
@@ -565,6 +651,7 @@ app.post('/eliminarContacto', async function (req, res) {
     }
 });
 
+
 //subir mensajes a bbdd
 app.post('/mensajes', async (req, res) => {
     try {
@@ -573,6 +660,7 @@ app.post('/mensajes', async (req, res) => {
                 INSERT INTO Mensajes (contenido, fecha_hora, id_usuario, id_chat) VALUES
             ("${req.body.contenido}","${req.body.fecha_hora}",${req.body.id_usuario},${req.body.id_chat});`
         );
+
 
         res.send({ res: "ok", agregado: true });
     } catch (e) {
@@ -585,6 +673,8 @@ app.post('/mensajes', async (req, res) => {
 });
 
 
+
+
 app.get('/infoUsuario', async (req, res) => {
     try {
         const userId = req.session.userId; // segun chat gpt esto toma el id del usuario q inicio sesion
@@ -592,14 +682,17 @@ app.get('/infoUsuario', async (req, res) => {
             return res.status(401).send({ ok: false, mensaje: "Usuario no logueado" });
         }
 
+
         const usuario = await realizarQuery(
             "SELECT ID, nombre FROM Usuarios WHERE ID = ? LIMIT 1",
             [userId]
         );
 
+
         if (usuario.length === 0) {
             return res.send({ ok: false, mensaje: "Usuario no encontrado" });
         }
+
 
         res.send({
             ok: true,
@@ -610,9 +703,11 @@ app.get('/infoUsuario', async (req, res) => {
     }
 });
 
+
 app.post('/encontrarMensajesChat', async (req, res) => {
     const { chatSeleccionadoId } = req.body;
     console.log("Body recibido:", req.body);
+
 
     try {
         const respuesta = await realizarQuery(`
@@ -623,6 +718,7 @@ app.post('/encontrarMensajesChat', async (req, res) => {
             ORDER BY Mensajes.fecha_hora ASC
         `);
 
+
         res.json({ ok: true, mensajes: respuesta });
     } catch (error) {
         console.error("Error al traer mensajes:", error);
@@ -631,16 +727,22 @@ app.post('/encontrarMensajesChat', async (req, res) => {
 });
 
 
+
+
 //PEDIDOS ADMIN
+
 
 app.post('/agregarUsuario', async function (req, res) {
     console.log(req.body);
 
+
     try {
         const { nombre, contraseña, mail, es_admin } = req.body;
 
+
         // Verificar si ya existe el usuario
         const vector = await realizarQuery(`SELECT * FROM Usuarios WHERE nombre = "${nombre}"`);
+
 
         if (vector.length === 0) {
             await realizarQuery(`
@@ -652,6 +754,7 @@ app.post('/agregarUsuario', async function (req, res) {
             res.send({ agregado: false, mensaje: "Ya existe ese usuario" });
         }
 
+
     } catch (err) {
         console.error(err);
         res.status(500).send({ agregado: false, error: "Error en el servidor" });
@@ -662,8 +765,10 @@ app.post('/agregarUsuario', async function (req, res) {
 app.post('/cartarandom', async function (req, res) {
     console.log(req.body);
 
+
     try {
         const { nombre, contraseña, mail, es_admin } = req.body;
+
 
         // Verificar si ya existe el usuario
         const personajesJugador1 = await realizarQuery(`
@@ -672,6 +777,7 @@ app.post('/cartarandom', async function (req, res) {
         const personajesJugador2 = await realizarQuery(`
                 SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
             `);
+
 
         if (vector.length === 0) {
             await realizarQuery(`
@@ -687,6 +793,7 @@ app.post('/cartarandom', async function (req, res) {
             res.send({ agregado: false, mensaje: "Ya existe ese usuario" });
         }
 
+
     } catch (err) {
         console.error(err);
         res.status(500).send({ agregado: false, error: "Error en el servidor" });
@@ -694,12 +801,16 @@ app.post('/cartarandom', async function (req, res) {
 });
 */
 
+
+
 //BORRAR USUARIO
 app.delete('/borrarUsuario', async function (req, res) {
     try {
         const ID = req.body.ID;
 
+
         const vector = await realizarQuery(`SELECT * FROM Usuarios WHERE ID='${ID}'`);
+
 
         if (vector.length > 0) {
             await realizarQuery(`DELETE FROM Usuarios WHERE ID='${ID}'`);
@@ -707,6 +818,7 @@ app.delete('/borrarUsuario', async function (req, res) {
         } else {
             res.send({ borrado: false, mensaje: "Usuario no encontrado" });
         }
+
 
     } catch (error) {
         res.status(500).send({
@@ -717,13 +829,17 @@ app.delete('/borrarUsuario', async function (req, res) {
     }
 });
 
+
 //Crear partida
+
 
 app.post('/crearPartida', async (req, res) => {
     const { categoria_id, jugador1_id } = req.body;
 
+
     // Verifica si el cuerpo de la solicitud contiene datos
     console.log('Cuerpo de la solicitud:', req.body); // Verifica que el cuerpo esté llegando correctamente
+
 
     try {
         // Verifica si los datos necesarios están presentes
@@ -732,22 +848,28 @@ app.post('/crearPartida', async (req, res) => {
             return res.status(400).send({ ok: false, mensaje: 'Faltan datos en la solicitud' });
         }
 
+
         const oponente = await realizarQuery(`
             SELECT * FROM Usuarios WHERE esperando_categoria = ${categoria_id} AND ID != ${jugador1_id} LIMIT 1
         `);
+
 
         const categoria = await realizarQuery(`
             SELECT nombre FROM Categorias WHERE ID = ${categoria_id}
         `);
 
+
         if (categoria.length === 0) {
             return res.status(404).send({ ok: false, mensaje: "Categoría no encontrada" });
         }
 
+
         const nombreCategoria = categoria[0].nombre;
+
 
         if (oponente.length > 0) {
             const jugador2_id = oponente[0].ID;
+
 
             const personajesJugador1 = await realizarQuery(`
         SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
@@ -755,6 +877,7 @@ app.post('/crearPartida', async (req, res) => {
             const personajesJugador2 = await realizarQuery(`
         SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
     `);
+
 
             const personajeJugador1_id = personajesJugador1[0].ID;
             const personajeJugador2_id = personajesJugador2[0].ID;
@@ -770,9 +893,11 @@ app.post('/crearPartida', async (req, res) => {
 
             console.log("✅ Partida creada con ID:", partida_id);
 
+
             await realizarQuery(`
         UPDATE Usuarios SET esperando_categoria = NULL WHERE ID IN (${jugador1_id}, ${jugador2_id})
     `);
+
 
             io.emit("partidaCreada", {
                 ok: true,
@@ -782,17 +907,15 @@ app.post('/crearPartida', async (req, res) => {
                 partida_id: partida_id, // 👈 Ahora es un número
             });
 
-            return res.send({
-                ok: true,
-                mensaje: "Partida creada con éxito",
-                nombreCategoria,
-                partida_id: partida_id // 👈 También en la respuesta HTTP
-            });
+
+            return res.send({ ok: true, msg: "Partida creada con éxito", nombreCategoria });
+
 
         } else {
             await realizarQuery(`
                 UPDATE Usuarios SET esperando_categoria = ${categoria_id} WHERE ID = ${jugador1_id}
             `);
+
 
             io.emit("partidaCreada", {
                 ok: true,
@@ -803,8 +926,10 @@ app.post('/crearPartida', async (req, res) => {
                 partida_id,
             });
 
-            return res.send({ ok: true, mensaje: "Esperando oponente...", esperando: true, nombreCategoria });
+
+            return res.send({ ok: true, msg: "Esperando oponente...", esperando: true, nombreCategoria });
         }
+
 
     } catch (err) {
         console.error('Error en backend:', err);  // Asegúrate de capturar el error completo
@@ -815,12 +940,15 @@ app.post('/crearPartida', async (req, res) => {
 
 //arriesgar personaje
 
+
 app.post("/arriesgar", async (req, res) => {
     const { id_partida, id_jugador, nombre_arriesgado } = req.body;
+
 
     try {
         const [partida] = await realizarQuery(`SELECT * FROM Partidas WHERE ID = ${id_partida}`);
         if (!partida) return res.send({ ok: false, mensaje: "Partida no encontrada" });
+
 
         const esJugador1 = id_jugador === partida.jugador1_id;
         const personajeOponenteId = esJugador1
@@ -832,6 +960,7 @@ app.post("/arriesgar", async (req, res) => {
 
         const [personajeOponente] = await realizarQuery(`SELECT * FROM Personajes WHERE ID = ${personajeOponenteId}`);
         if (!personajeOponente) return res.send({ ok: false, mensaje: "No se encontró el personaje del oponente" });
+
 
         if (nombre_arriesgado.trim().toLowerCase() === personajeOponente.nombre.trim().toLowerCase()) {
 
@@ -886,3 +1015,20 @@ app.post("/arriesgar", async (req, res) => {
         res.status(500).send({ ok: false, mensaje: "Error en el servidor" });
     }
 });
+
+//salir de partida
+app.put('/salir', async function(req, res) {
+    const id_partida = req.body;
+    try {
+        await realizarQuery(`UPDATE Partidas SET
+            estado='finalizada', WHERE ID = ${req.body.id};`);
+
+        res.send({ ok: true, mensaje: "Frase modificada correctamente" });
+    } catch (e) {
+        console.log("ERROR:", e.message);
+        res.send({ ok: false, mensaje: "Error en la modificación", error: e.message });
+    }
+});
+
+
+

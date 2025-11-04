@@ -1,5 +1,6 @@
 "use client"
 
+
 import Boton from "@/componentes/Boton"
 import Input from "@/componentes/Input"
 import Title from "@/componentes/Title"
@@ -9,6 +10,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation"
 import styles from "./page.module.css"
 import Mensajes from "@/componentes/Mensajes";
+
 
 export default function Tablero() {
     const router = useRouter()
@@ -27,6 +29,32 @@ export default function Tablero() {
     const [cartaAsignada, setCartaAsignada] = useState([]);
     const [cartaAsignada2, setCartaAsignada2] = useState([]);
     const [contador, setContador] = useState(0)
+    const [turno, setTurno] = useState("jugador1");  // Define cuál jugador tiene el turno
+    const [idPropio, setIdPropio] = useState();
+    const [idRival, setIdRival] = useState();
+    const [flagYaEnvie, setFlagYaEnvie] = useState(0);
+    const [jugador, setJugador] = useState(""); //Esto es para saber que jugador soy, asi cuando es mi turno juego yo
+
+    const [segundos, setSegundos] = useState(60);
+
+    //timer
+    useEffect(() => {
+        if (!socket) return;
+
+        // Escuchar evento para actualizar el temporizador
+        socket.on('actualizarTemporizador', (data) => {
+            setSegundos(data.timer);  // Actualiza el temporizador en pantalla
+        });
+
+        // Limpiar el evento cuando el componente se desmonte
+        return () => socket.off('actualizarTemporizador');
+    }, [socket]);
+
+    // Función que se llama cuando el jugador presiona el botón para reiniciar el temporizador
+    const reiniciarTemporizador = () => {
+        const room = localStorage.getItem("room");  // Asumiendo que usas rooms
+        socket.emit('reiniciarTemporizador', { room });  // Enviar evento al backend
+    };
 
     async function traerPersonajes() {
         try {
@@ -36,8 +64,6 @@ export default function Tablero() {
             });
             const data = await response.json();
             console.log("Data recibida del backend:", data);
-
-
             if (data.ok && data.personajes) {
                 localStorage.setItem("personajesFarandula", JSON.stringify(data.personajes));
                 setPersonajes(data.personajes);
@@ -63,50 +89,79 @@ export default function Tablero() {
         traerCarta();
     }, []);
 
+
+    useEffect(() => {
+        let id = localStorage.getItem('ID');
+        setIdPropio(id)
+        console.log("Soy: ", id)
+        if (!socket) return;
+        const room = localStorage.getItem("room");
+        socket.emit("idJugadores", { room, id, idRival });
+    }, [socket, isConnected])
+
+
     useEffect(() => {
         if (!socket) return;
+
 
         socket.on("newMessage", (data) => {
             console.log("📩 Nuevo mensaje:", data);
             setMensajes((prev) => [...prev, data]);
         });
 
-        /*
-        socket.on("rendirse", data => {
-            let contadorTemp = contador+1
-            setContador(contadorTemp)
-        })
-            */
+
+        socket.on("idRival", (data) => {
+            console.log("Data: ", data, " IdPropio: ", idPropio)
+            if (data.id != idPropio) {
+                console.log("📩 Id rival:", data);
+                setIdRival(data.id)
+            }
+            /*if (data.idRival == undefined) {
+                const room = localStorage.getItem("room");
+                socket.emit("idJugadores", {room, idPropio, idRival});
+            }*/
+        });
     }, [socket]);
 
 
-    /*  useEffect(() => {
-          const unloadCallback = (event) => {
-              console.log("Unload Event")
-              event.preventDefault();
-              event.returnValue = "";
-              return "";
-          };
-          
-          window.addEventListener("beforeunload", unloadCallback);
-          return () => {
-              window.addEventListener("popstate", confirm("Seguro"));
-              window.removeEventListener("beforeunload", unloadCallback);
-          }
-      }, []);*/
+    useEffect(() => {
+        if (idPropio && idRival) {
+            console.log("Los ids existen: ", idPropio, " y ", idRival)
+            if (idPropio > idRival) {
+                setJugador("jugador2")
+            }
+            else {
+                setJugador("jugador1")
+            }
+            if (flagYaEnvie == 0) {
+                setFlagYaEnvie(1)
+                const room = localStorage.getItem("room");
+                let id = localStorage.getItem('ID');
+                console.log("Enviando id del primero q entro")
+                socket.emit("idJugadores", { room, id, idRival });
+            }
+        }
+    }, [idPropio, idRival])
+
 
     useEffect(() => {
-        if (!socket) return
+        if (!socket) return;
 
-        if (contador == 2) {
-            alert("Se rindioooo" + data.mensaje)
-            socket.emit("finalizarPartida", {
-                id_partida: localStorage.getItem("partida_id"),
-                id_jugador: localStorage.getItem("ID")
-            })
-            setContador(0)
-        }
-    }, [contador])
+        socket.on("cambiarTurno", ({ room, nuevoTurno }) => {
+            console.log("🔄 El turno ha cambiado:", nuevoTurno);
+            setTurno(nuevoTurno); // Cambia el turno del jugador local
+        });
+
+        return () => socket.off("cambiarTurno"); // Limpia el mismo evento
+    }, [socket]);
+
+
+    const cambiarTurno = () => {
+        const room = localStorage.getItem("room");
+        const nuevoTurno = turno === "jugador1" ? "jugador2" : "jugador1";
+        socket.emit("turnoCambio", { room, nuevoTurno });  // Emite el cambio de turno al servidor
+        setTurno(nuevoTurno); // Actualiza el estado local
+    };
 
     function sendMessage() {
         const room = localStorage.getItem("room");
@@ -116,6 +171,31 @@ export default function Tablero() {
         console.log("Mensaje enviado:", nuevo);
     }
 
+    function responder() { //hay un problema
+        return (
+            <>
+                <Boton
+                    color={"si"}
+                    value={"si"}
+                    texto={"Sí"}
+                    onClick={(e) => {
+                        checkeado(e);
+                        cambiarTurno(); // Cambiar el turno a jugador1 después de responder
+                    }}
+                />
+                <Boton
+                    color={"no"}
+                    value={"no"}
+                    texto={"No"}
+                    onClick={(e) => {
+                        checkeado(e);
+                        cambiarTurno(); // Cambiar el turno a jugador1 después de responder
+                    }}
+                />
+            </>
+        );
+    }
+
     useEffect(() => {
         if (!socket) return;
         let room = localStorage.getItem("room")
@@ -123,46 +203,6 @@ export default function Tablero() {
             socket.emit("joinRoom", { room: room });
         }
     }, [socket])
-
-    /*
-    useEffect(() => {
-        if (!socket) {
-            console.log("El socket no está inicializado todavía");
-            return;
-        }
-
-        const handleRouteChange = () => {
-            socket.emit("user_navigated_back", {
-                partida_id: localStorage.getItem("partida_id"),
-                jugador_id: localStorage.getItem("ID")
-            });
-        };
-
-        window.addEventListener("popstate", handleRouteChange);
-
-        return () => {
-            window.removeEventListener("popstate", handleRouteChange);
-            socket.off("partida_finalizada");
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!socket) return; // 🛑 No hacer nada si el socket aún no existe
-
-        // 🧠 Escucha si el oponente abandonó la partida
-        socket.on("partida_finalizada", (data) => {
-            alert(data.mensaje);
-            localStorage.removeItem("partida_id");
-            localStorage.removeItem("room");
-            router.push("/inicio");
-        });
-
-        // 🧹 Limpiar el listener cuando el componente se desmonte
-        return () => {
-            socket.off("partida_finalizada");
-        };
-    }, [socket, router]); // <- importante incluir dependencias
-    */
 
     async function arriesgar() {
         if (nombreArriesgado.trim() === "") {
@@ -181,6 +221,7 @@ export default function Tablero() {
         console.log("🔍 nombreArriesgado:", nombreArriesgado);
         console.log("🔍 Todo el localStorage:", localStorage);
 
+
         try {
             const res = await fetch("http://localhost:4000/arriesgar", {
                 method: "POST",
@@ -192,8 +233,17 @@ export default function Tablero() {
                 }),
             });
 
+            //aca
+            localStorage.setItem("partida", JSON.stringify(partida.ID))
+            const partidaa = JSON.parse(localStorage.getItem("partida"));
+            console.log("Partida almacenada en localStorage:", partidaa);
+            // Parsear la respuesta a JSON
             const result = await res.json();
+
+
+            // Actualizar el mensaje en el estado
             setMensaje(result.mensaje);
+
 
             if (result.ok) {
                 if (result.gano) {
@@ -201,6 +251,9 @@ export default function Tablero() {
                 } else {
                     alert(`Perdiste. El personaje correcto era ${result.personajeCorrecto}.`);
                 }
+
+
+                // Si el jugador ganó o perdió, redirigir a la página de inicio
                 router.push("/inicio");
             } else {
                 alert("Hubo un problema al realizar el arriesgue.");
@@ -209,6 +262,7 @@ export default function Tablero() {
             console.error(error);
             alert("Error al conectar con el servidor");
         }
+
 
         setLoading(false);
     }
@@ -251,10 +305,8 @@ export default function Tablero() {
     function checkeado(event) {
         const value = event.target.value;
         setBool(value);
-
         const nuevoColor = value == "si" ? "si" : "no";
         setcolor(nuevoColor);
-
         setMensajes((prevMensajes) => {
             if (prevMensajes.length == 0) return prevMensajes;
             const nuevos = [...prevMensajes];
@@ -263,11 +315,12 @@ export default function Tablero() {
             nuevos[nuevos.length - 1] = ultimo;
             return nuevos;
         });
-
         const room = localStorage.getItem("room");
         socket.emit("colorChange", { room, color: nuevoColor });
-    }
 
+        reiniciarTemporizador();
+
+    }
 
     useEffect(() => {
         if (!socket) return;
@@ -314,6 +367,7 @@ export default function Tablero() {
     */
 
 
+
     async function traerCarta() {
         try {
             const partida_id = localStorage.getItem("partida_id");
@@ -332,6 +386,7 @@ export default function Tablero() {
             const data = await response.json();
             console.log("Data recibida del backend:", data);
 
+
             if (data.ok) {
                 const carta = Array.isArray(data.carta) ? data.carta[0] : data.carta;
 
@@ -349,15 +404,19 @@ export default function Tablero() {
         }
     }
 
-
     return (
         <>
             <div className={styles.header}>
                 <header>
                     <Title texto={"¿Quién es quién?"} />
                 </header>
-
             </div>
+
+            <div className={styles.tcontainer}>
+                <div className={styles.temporizador}>{segundos}</div>
+                <button onClick={reiniciarTemporizador}>Reiniciar Temporizador</button>
+            </div>
+
             <div className={styles.chatBox}>
                 {mensajes.map((m, i) => (
                     <Mensajes
@@ -365,9 +424,9 @@ export default function Tablero() {
                         texto={m.message?.message || m.message}
                         color={m.color || "mensaje"}
                     />
-
                 ))}
             </div>
+
             <div className={styles.juego}>
                 {personajes.map((p) => (
                     <BotonImagen
@@ -379,13 +438,31 @@ export default function Tablero() {
                     />
                 ))}
             </div>
+
             <div className={styles.botonesRespuestas}>
-                <Input placeholder={"Hace una pregunta"} color={"registro"} onChange={(e) => setMessage(e.target.value)}></Input>
-                <Boton color={"wpp"} texto={"Preguntar"} onClick={sendMessage}></Boton>
-            </div>
-            <div className={styles.botonesRespuestas}>
-                <Boton color={"si"} value={"si"} texto={"Sí"} onClick={checkeado} />
-                <Boton color={"no"} value={"no"} texto={"No"} onClick={checkeado} />
+                {(turno === "jugador1" && jugador === "jugador1") || (turno === "jugador2" && jugador === "jugador2") ? (
+                    <>
+                        {/* Si es el turno del jugador, mostrar el input para hacer una pregunta */}
+                        <Input
+                            placeholder={"Hace una pregunta"}
+                            color={"registro"}
+                            onChange={(e) => setMessage(e.target.value)}
+                        />
+                        <Boton
+                            color={"wpp"}
+                            texto={"Preguntar"}
+                            onClick={() => {
+                                sendMessage(); // Enviar el mensaje
+                                // No cambiar el turno aún, esperar la respuesta del oponente
+                            }}
+                        />
+                    </>
+                ) : (turno === "jugador2" && jugador === "jugador1") || (turno === "jugador1" && jugador === "jugador2") ? (
+                    <>
+                        {/* Si es el turno del oponente, mostrar los botones de respuesta */}
+                        {responder()}
+                    </>
+                ) : null}
             </div>
 
             <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)}></Input>
@@ -403,11 +480,15 @@ export default function Tablero() {
                 )}
             </div>
 
+
             <div className={styles.footer}>
                 <footer>
                     <h2>Arrufat - Gaetani - Suarez - Zuran</h2>
                 </footer>
             </div>
         </>
-    )
+    );
+
+
 }
+
