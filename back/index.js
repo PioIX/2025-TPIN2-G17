@@ -172,22 +172,6 @@ function reiniciarTemporizador(room) {
     io.to(room).emit('actualizarTemporizador', { timer: timers[room] });  // Emitir el temporizador actualizado
 }
 
-/*
-setInterval(() => {
-    for (let room in timers) {
-        if (timers[room] > 0) {
-            timers[room]--;  // Disminuir el temporizador cada segundo
-            io.to(room).emit('actualizarTemporizador', { timer: timers[room] });
-        } else {
-            // Cuando el temporizador llega a 0, cambiar el turno
-            //io.to(room).emit('cambiarTurno', { turnoSiguiente: 'jugador 2' });  // O 'jugador 1' dependiendo de la lógica
-            io.to(room).emit('cambiarTurno', nuevoTurno);
-            reiniciarTemporizador(room);
-        }
-    }
-}, 1000);
-*/
-
 setInterval(() => {
     for (let room in timers) {
         if (timers[room] > 0) {
@@ -757,9 +741,6 @@ app.post('/cartarandom', async function (req, res) {
     }
 });
 
-
-
-
 //BORRAR USUARIO
 app.delete('/borrarUsuario', async function (req, res) {
     try {
@@ -887,19 +868,9 @@ app.post('/crearPartida', async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
 //arriesgar personaje
-
-
 app.post("/arriesgar", async (req, res) => {
     const { id_partida, id_jugador, nombre_arriesgado } = req.body;
-
 
     try {
         const [partida] = await realizarQuery(`SELECT * FROM Partidas WHERE ID = ${id_partida}`);
@@ -938,7 +909,15 @@ app.post("/arriesgar", async (req, res) => {
     }
 });
 
+//cortar partida
+app.put('/salir', async function (req, res) {
+    try {
+        await realizarQuery(`UPDATE Partidas SET
+            estado = 'finalizada', WHERE ID = ${req.body.id};`);
 
-
-
-
+        res.send({ ok: true, mensaje: "Saliste con éxito"});
+    } catch (e) {
+        console.log("ERROR:", e.message);
+        res.send({ ok: false, mensaje: "Error en la modificación", error: e.message });
+    }
+});

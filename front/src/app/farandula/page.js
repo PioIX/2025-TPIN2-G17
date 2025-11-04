@@ -101,8 +101,6 @@ export default function Tablero() {
 
     useEffect(() => {
         if (!socket) return;
-
-
         socket.on("newMessage", (data) => {
             console.log("📩 Nuevo mensaje:", data);
             setMensajes((prev) => [...prev, data]);
@@ -115,10 +113,6 @@ export default function Tablero() {
                 console.log("📩 Id rival:", data);
                 setIdRival(data.id)
             }
-            /*if (data.idRival == undefined) {
-                const room = localStorage.getItem("room");
-                socket.emit("idJugadores", {room, idPropio, idRival});
-            }*/
         });
     }, [socket]);
 
@@ -365,8 +359,13 @@ export default function Tablero() {
 
             <div className={styles.tcontainer}>
                 <div className={styles.temporizador}>{segundos}</div>
-                <button onClick={reiniciarTemporizador}>Reiniciar Temporizador</button>
+                <Boton onClick={reiniciarTemporizador} texto={"Iniciar Partida"} color={"wpp"}></Boton>
             </div>
+
+            <div className={styles.salir}>
+                <Boton onClick={reiniciarTemporizador} texto={"Salir"} color={"eliminar"}></Boton>
+            </div>
+
 
             <div className={styles.chatBox}>
                 {mensajes.map((m, i) => (
