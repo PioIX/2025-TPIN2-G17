@@ -9,8 +9,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation"
 import styles from "./page.module.css"
 import Mensajes from "@/componentes/Mensajes";
+import { useConnection } from "@/hooks/useConnection";
 
 export default function Tablero() {
+    const {url} = useConnection()
     const router = useRouter()
     const { socket, isConnected } = useSocket();
     const [mensajes, setMensajes] = useState([]);
@@ -21,7 +23,7 @@ export default function Tablero() {
 
     async function traerPersonajes() {
         try {
-            const response = await fetch("http://localhost:4000/famosos", {
+            const response = await fetch(url + "/famosos", {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });

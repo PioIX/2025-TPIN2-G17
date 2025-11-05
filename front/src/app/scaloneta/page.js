@@ -9,8 +9,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation"
 import styles from "./page.module.css"
 import Mensajes from "@/componentes/Mensajes";
+import { useConnection } from "@/hooks/useConnection";
 
 export default function Tablero() {
+    const {url} = useConnection()
     const router = useRouter()
     const partida = JSON.parse(localStorage.getItem("partidaActual"));
     const jugadorId = parseInt(localStorage.getItem("ID"));
@@ -31,7 +33,7 @@ export default function Tablero() {
         }
 
         try {
-            const res = await fetch("http://localhost:4000/arriesgar", {
+            const res = await fetch(url + "/arriesgar", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -54,7 +56,7 @@ export default function Tablero() {
     }
     async function traerPersonajes() {
         try {
-            const response = await fetch("http://localhost:4000/scaloneta", {
+            const response = await fetch(url + "/scaloneta", {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });

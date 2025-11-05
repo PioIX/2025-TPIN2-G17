@@ -33,7 +33,12 @@ const server = app.listen(port, function () {
 const io = require('socket.io')(server, {
     cors: {
         // IMPORTANTE: REVISAR PUERTO DEL FRONTEND
-        origin: ["http://localhost:3000", "http://localhost:3001"], // Permitir el origen localhost:3000
+        origin: [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://10.1.4.162:3000",
+        ], 
+        
         methods: ["GET", "POST", "PUT", "DELETE"],      // Métodos permitidos
         credentials: true                               // Habilitar el envío de cookies
     }
@@ -949,6 +954,7 @@ app.post("/arriesgar", async (req, res) => {
         const esJugador1 = id_jugador === partida.jugador1_id;
         const personajeOponenteId = esJugador1
             ? partida.personaje_jugador2_id
+            
             : partida.personaje_jugador1_id;
 
 

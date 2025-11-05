@@ -10,9 +10,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation"
 import styles from "./page.module.css"
 import Mensajes from "@/componentes/Mensajes";
-
+import { useConnection } from "@/hooks/useConnection";
 
 export default function Tablero() {
+    const {url} = useConnection()
     const router = useRouter()
     const { socket, isConnected } = useSocket();
     const [mensajes, setMensajes] = useState([]);
@@ -58,7 +59,7 @@ export default function Tablero() {
 
     async function traerPersonajes() {
         try {
-            const response = await fetch("http://localhost:4000/farandula", {
+            const response = await fetch(url + "/farandula", {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
@@ -223,7 +224,7 @@ export default function Tablero() {
 
 
         try {
-            const res = await fetch("http://localhost:4000/arriesgar", {
+            const res = await fetch(url + "/arriesgar", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -233,17 +234,14 @@ export default function Tablero() {
                 }),
             });
 
-            //aca
-            localStorage.setItem("partida", JSON.stringify(partida.ID))
-            const partidaa = JSON.parse(localStorage.getItem("partida"));
-            console.log("Partida almacenada en localStorage:", partidaa);
-            // Parsear la respuesta a JSON
             const result = await res.json();
-
+            //aca
+            localStorage.setItem("partida", JSON.stringify(result.id_partida))
+            //const partidaa = JSON.parse(localStorage.getItem("partida"));
+            console.log("Partida almacenada en localStorage:", localStorage.getItem("partida"));
 
             // Actualizar el mensaje en el estado
             setMensaje(result.mensaje);
-
 
             if (result.ok) {
                 if (result.gano) {
@@ -258,6 +256,7 @@ export default function Tablero() {
             } else {
                 alert("Hubo un problema al realizar el arriesgue.");
             }
+        
         } catch (error) {
             console.error(error);
             alert("Error al conectar con el servidor");
@@ -284,6 +283,7 @@ export default function Tablero() {
         socket.on("partidaFinalizada", (data) => {
             console.log("📥 Partida finalizada:", data);
 
+            /*
             const miId = Number(localStorage.getItem("ID"));
 
             if (data.ganador_id === miId) {
@@ -291,7 +291,8 @@ export default function Tablero() {
             } else if (data.perdedor_id === miId) {
                 alert(`Perdiste. El personaje correcto era ${data.personajeCorrecto}.`);
             }
-
+            */
+            
             localStorage.removeItem("partida_id");
             localStorage.removeItem("room");
             router.push("/inicio");
@@ -349,7 +350,7 @@ export default function Tablero() {
                 return;
             }
 
-            const response = await fetch(`http://localhost:4000/random?partida_id=${partida_id}&jugador_id=${jugador_id}`, {
+            const response = await fetch(url + `/random?partida_id=${partida_id}&jugador_id=${jugador_id}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
@@ -379,7 +380,7 @@ export default function Tablero() {
     async function salida() {
         const partida_id = localStorage.getItem("partida_id");
         try {
-            let response = await fetch("http://localhost:4000/salir", {
+            let response = await fetch(url + "/salir", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
