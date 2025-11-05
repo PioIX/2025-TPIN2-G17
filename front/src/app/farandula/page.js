@@ -339,35 +339,6 @@ export default function Tablero() {
     }, [socket]);
 
     // carta random
-    /*
-
-    useEffect(() => {
-        // Asegúrate de que socket esté disponible y la sala exista
-        const room = localStorage.getItem("room");
-        const personajes = JSON.parse(localStorage.getItem("personajesFarandula"));
-        if (room && socket) {
-            console.log("Personajes:", personajes);  // Verifica que sea un array
-            socket.emit("comenzarRonda", room, personajes);  // Emitir el evento al backend
-        }
-    }, [socket]);  // Solo se ejecuta cuando el socket está disponible
-
-
-    useEffect(() => {
-        if (!socket) return;
-
-        socket.on("cartaAsignada", (carta) => {
-            console.log("Tu carta asignada es:", carta);  // Verifica que la carta se reciba correctamente
-            setCartaAsignada(carta);  // Asigna la carta al jugador
-        });
-
-        return () => {
-            socket.off("cartaAsignada");  // Limpiar el evento cuando el componente se desmonte
-        };
-    }, [socket]);
-    */
-
-
-
     async function traerCarta() {
         try {
             const partida_id = localStorage.getItem("partida_id");
@@ -404,6 +375,32 @@ export default function Tablero() {
         }
     }
 
+    //salir
+    async function salida() {
+        const partida_id = localStorage.getItem("partida_id");
+        try {
+            let response = await fetch("http://localhost:4000/salir", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id_partida: partida_id,
+                }),
+            });
+
+            let result = await response.json();
+            if (result.ok) {
+                alert("saliste de la partida");
+                router.push("/inicio");
+            } else {
+                alert("Error: " + result.mensaje);
+            }
+        } catch (error) {
+            console.error("No salió de la partida", error);
+        }
+    }
+
     return (
         <>
             <div className={styles.header}>
@@ -415,6 +412,10 @@ export default function Tablero() {
             <div className={styles.tcontainer}>
                 <div className={styles.temporizador}>{segundos}</div>
                 <button onClick={reiniciarTemporizador}>Reiniciar Temporizador</button>
+            </div>
+
+            <div className={styles.salir}>
+                <Boton onClick={salida} texto={"Salir"} color={"eliminar"}></Boton>
             </div>
 
             <div className={styles.chatBox}>

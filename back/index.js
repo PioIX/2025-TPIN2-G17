@@ -1014,17 +1014,18 @@ app.post("/arriesgar", async (req, res) => {
 
 //salir de partida
 app.put('/salir', async function (req, res) {
-    const id_partida = req.body;
+    const { id_partida } = req.body;
     try {
-        await realizarQuery(`UPDATE Partidas SET
-            estado='finalizada', WHERE ID = ${req.body.id};`);
+        const query = `UPDATE Partidas SET estado = 'finalizada' WHERE ID = ${id_partida};`;
+        await realizarQuery(query);
 
-        res.send({ ok: true, mensaje: "Frase modificada correctamente" });
+        res.send({ ok: true, mensaje: "Partida finalizada correctamente" });
     } catch (e) {
         console.log("ERROR:", e.message);
-        res.send({ ok: false, mensaje: "Error en la modificación", error: e.message });
+        res.send({ ok: false, mensaje: "Error al finalizar la partida", error: e.message });
     }
 });
+
 
 
 

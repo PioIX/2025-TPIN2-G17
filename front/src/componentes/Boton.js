@@ -14,6 +14,7 @@ export default function Boton(props) {
                     [styles.farandula]: props.color == "farandula", 
                     [styles.cantantes]: props.color == "cantantes", 
                     [styles.si]: props.color == "si",
+                    [styles.no]: props.color == "no",
                     [styles.arriesgar]: props.color == "arriesgar", 
                 }
             )
