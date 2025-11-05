@@ -6,9 +6,10 @@ import Title from "@/componentes/Title"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import styles from "./page.module.css"
+import { useConnection } from "@/hooks/useConnection"
 
 export default function Administrador() {
-
+    const {url} = useConnection()
     const [nombre, setNombre] = useState("")
     const [contraseña, setContraseña] = useState("")
     const [mail, setMail] = useState("")
@@ -23,7 +24,7 @@ export default function Administrador() {
 
     async function agregarUsuario(datos) {
         try {
-            const response = await fetch("http://localhost:4000/agregarUsuario", {
+            const response = await fetch(url + "/agregarUsuario", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datos),
@@ -51,7 +52,7 @@ export default function Administrador() {
 
     async function borrarUsuario(datos) {
         try {
-            let response = await fetch("http://localhost:4000/borrarUsuario", {
+            let response = await fetch(url + "/borrarUsuario", {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",

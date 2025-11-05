@@ -6,8 +6,11 @@ import Title from "@/componentes/Title"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import styles from "./page.module.css"
+import { useConnection } from "@/hooks/useConnection"
 
 export default function LoginPage() {
+  const {url} = useConnection()
+
   const [nombre, setNombre] = useState("")
   const [contraseña, setContraseña] = useState("")
   const [mail, setMail] = useState("")
@@ -15,7 +18,7 @@ export default function LoginPage() {
 
   async function agregarUsuarioRegistro(datos) {
     try {
-      const response = await fetch("http://localhost:4000/registro", {
+      const response = await fetch(url + "/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos),
@@ -44,7 +47,7 @@ export default function LoginPage() {
 
   async function login(datos) {
     try {
-      const response = await fetch("http://localhost:4000/login", {
+      const response = await fetch(url + "/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

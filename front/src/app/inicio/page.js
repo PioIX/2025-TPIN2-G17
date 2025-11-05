@@ -6,9 +6,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useSocket } from "@/hooks/useSocket";
+import { useConnection } from "@/hooks/useConnection";
 
 export default function LoginPage() {
     const router = useRouter();
+    const {url} = useConnection()
     const { socket } = useSocket();
     const [loading, setLoading] = useState(false);
     const [mensaje, setMensaje] = useState("");
@@ -36,7 +38,7 @@ export default function LoginPage() {
         setMensaje("");
 
         try {
-            const res = await fetch("http://localhost:4000/crearPartida", {
+            const res = await fetch(url + "/crearPartida", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
