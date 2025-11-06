@@ -13,7 +13,7 @@ import Mensajes from "@/componentes/Mensajes";
 import { useConnection } from "@/hooks/useConnection";
 
 export default function Tablero() {
-    const {url} = useConnection()
+    const { url } = useConnection()
     const router = useRouter()
     const { socket, isConnected } = useSocket();
     const [mensajes, setMensajes] = useState([]);
@@ -72,7 +72,7 @@ export default function Tablero() {
                 setPersonajes([]);
             }
         } catch (error) {
-            console.error("Error al traer personajes:", error);
+            console.log("Error al traer personajes:", error);
             setPersonajes([]);
         }
     }
@@ -90,7 +90,7 @@ export default function Tablero() {
         traerCarta();
     }, []);
 
-
+/*
     useEffect(() => {
         let id = localStorage.getItem('ID');
         setIdPropio(id)
@@ -98,7 +98,7 @@ export default function Tablero() {
         if (!socket) return;
         const room = localStorage.getItem("room");
         socket.emit("idJugadores", { room, id, idRival });
-    }, [socket, isConnected])
+    }, [socket, isConnected])*/
 
 
     useEffect(() => {
@@ -109,27 +109,27 @@ export default function Tablero() {
             console.log("📩 Nuevo mensaje:", data);
             setMensajes((prev) => [...prev, data]);
         });
-
-        socket.on("pedirId", (data) =>{
-            socket.emit("idJugadores", {room, idPropio, idRival});
+        /*
+        socket.on("pedirId", (data) => {
+            socket.emit("idJugadores", { room, idPropio, idRival });
         })
 
-
-        socket.on("idRival", (data) => {
-            console.log("Data: ", data, " IdPropio: ", idPropio)
-            if (data.id != idPropio) {
-                console.log("📩 Id rival:", data);
-                setIdRival(data.id)
-            }
-            /*if (data.idRival == undefined) {
-                const room = localStorage.getItem("room");
-                socket.emit("idJugadores", {room, idPropio, idRival});
-            }*/
-        });
+        
+                socket.on("idRival", (data) => {
+                    console.log("Data: ", data, " IdPropio: ", idPropio)
+                    if (data.id != idPropio) {
+                        console.log("📩 Id rival:", data);
+                        setIdRival(data.id)
+                    }
+                });*/
     }, [socket]);
 
 
     useEffect(() => {
+        setIdPropio(localStorage.getItem('ID'));
+        setIdRival(localStorage.getItem('oponente_id'));
+        console.log("Rival: ", idRival, " Propio: ", idPropio)
+
         if (idPropio && idRival) {
             console.log("Los ids existen: ", idPropio, " y ", idRival)
             if (idPropio > idRival) {
@@ -138,32 +138,33 @@ export default function Tablero() {
             else {
                 setJugador("jugador1")
             }
+            /*
             if (flagYaEnvie == 0) {
                 setFlagYaEnvie(1)
                 const room = localStorage.getItem("room");
                 let id = localStorage.getItem('ID');
                 console.log("Enviando id del primero q entro")
                 socket.emit("idJugadores", { room, id, idRival });
-            }
+            }*/
         }
     }, [idPropio, idRival])
 
-    
 
-    useEffect(()=>{
-        const pedirId = () =>{
+
+    useEffect(() => {
+        const pedirId = () => {
             if (jugador == "") {
-                if(!socket) return
+                if (!socket) return
                 console.log("necesito ID")
-                socket.emit("necesitoId", {room})
+                socket.emit("necesitoId", { room })
             }
-            else{
+            else {
                 clearTimeout(myTimeout);
             }
         }
         const myTimeout = setTimeout(pedirId, 5000);
 
-    },[])
+    }, [])
 
 
     useEffect(() => {
@@ -235,6 +236,7 @@ export default function Tablero() {
         const jugadorId = localStorage.getItem("ID");
 
         setLoading(true);
+
         const partida_id = localStorage.getItem("partida_id");
         console.log("esta es la partida en curso: ", partida_id)
 
@@ -255,11 +257,14 @@ export default function Tablero() {
                 }),
             });
 
-            const result = await res.json();
+            result = await res.json();
             //aca
-            localStorage.setItem("partida", JSON.stringify(result.id_partida))
+            /*
+            localStorage.setItem("partida_id", JSON.stringify(result.id_partida))
             //const partidaa = JSON.parse(localStorage.getItem("partida"));
-            console.log("Partida almacenada en localStorage:", localStorage.getItem("partida"));
+            console.log("Partida almacenada en localStorage:", localStorage.getItem("partida_id"));
+            */
+            const result = await res.json();
 
             // Actualizar el mensaje en el estado
             setMensaje(result.mensaje);
@@ -277,7 +282,7 @@ export default function Tablero() {
             } else {
                 alert("Hubo un problema al realizar el arriesgue.");
             }
-        
+
         } catch (error) {
             console.error(error);
             alert("Error al conectar con el servidor");
@@ -306,14 +311,14 @@ export default function Tablero() {
 
             /*
             const miId = Number(localStorage.getItem("ID"));
-
+ 
             if (data.ganador_id === miId) {
                 alert(`¡Ganaste! El personaje correcto era ${data.personajeCorrecto}.`);
             } else if (data.perdedor_id === miId) {
                 alert(`Perdiste. El personaje correcto era ${data.personajeCorrecto}.`);
             }
             */
-            
+
             localStorage.removeItem("partida_id");
             localStorage.removeItem("room");
             router.push("/inicio");
@@ -411,7 +416,7 @@ export default function Tablero() {
                     id_partida: partida_id,
                 }),
             });
-
+ 
             let result = await response.json();
             if (result.ok) {
                 alert("saliste de la partida");
@@ -427,9 +432,9 @@ export default function Tablero() {
     async function salida() {
         const partida_id = localStorage.getItem("partida_id");
         const room = localStorage.getItem("room");
-        
+
         try {
-            let response = await fetch("http://localhost:4000/salir", {
+            let response = await fetch(url + "/salir", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -529,7 +534,7 @@ export default function Tablero() {
             </div>
 
             <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)}></Input>
-            <Boton color={"wpp"} texto={"Arriesgar"} onClick={arriesgar}></Boton>
+            <Boton color={"wpp"} texto={"Arriesgar"} onKeyDown={arriesgar}></Boton>
 
             <div className={styles.carta}>
                 {cartaAsignada && (

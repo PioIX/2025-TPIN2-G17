@@ -46,6 +46,7 @@ export default function LoginPage() {
                 body: JSON.stringify({
                     categoria_id: categoriaId,
                     jugador1_id: jugadorId,
+                    partida_id: localStorage.getItem("partida_id"),
                 }),
             });
 
@@ -83,9 +84,17 @@ export default function LoginPage() {
 
                 const miId = Number(localStorage.getItem("ID"));
                 console.log("🔍 Mi ID:", miId, "| Host:", data.userHost);
-
+                
                 if (data.ok && !data.esperando) {
                     if (data.partida_id) {
+                        
+                        data.jugadores.map((id) => {
+                            if (id != miId) {
+                                localStorage.setItem("oponente_id", id);
+                            } 
+
+                        });
+                        
                         localStorage.setItem("partida_id", data.partida_id);
                         console.log("partida_id guardado:", data.partida_id);
                     }
