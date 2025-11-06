@@ -10,7 +10,7 @@ import { useConnection } from "@/hooks/useConnection";
 
 export default function LoginPage() {
     const router = useRouter();
-    const {url} = useConnection()
+    const { url } = useConnection()
     const { socket } = useSocket();
     const [loading, setLoading] = useState(false);
     const [mensaje, setMensaje] = useState("");
@@ -76,46 +76,76 @@ export default function LoginPage() {
         setLoading(false); // Termina el estado de carga
     }
 
+    /*
+        useEffect(() => {
+            if (socket) {
+                socket.on("partidaCreada", (data) => {
+                    console.log("📥 Evento recibido:", data);
+    
+                    const miId = Number(localStorage.getItem("ID"));
+                    console.log("🔍 Mi ID:", miId, "| Host:", data.userHost);
+                    
+                    if (data.ok && !data.esperando) {
+                        if (data.partida_id) {
+                            
+                            data.jugadores.map((id) => {
+                                if (id != miId) {
+                                    localStorage.setItem("oponente_id", id);
+                                } 
+    
+                            });
+                            
+                            localStorage.setItem("partida_id", data.partida_id);
+                            console.log("partida_id guardado:", data.partida_id);
+                        }
+                        setMensaje("¡La partida ha comenzado!");
+                        router.push(`/${data.nombreCategoria}`);
+                    } else if (data.esperando) {
+                        if (data.userHost === miId) {
+                            setMensaje("Esperando oponente...");
+                            alert("Esperando oponente...");
+                        } else {
+                            console.log("No soy el host");
+                        }
+                    }
+                });
+    
+                return () => {
+                    socket.off("partidaCreada");
+                };
+            }
+        }, [socket, router]);*/
 
     useEffect(() => {
         if (socket) {
-            socket.on("partidaCreada", (data) => {
+            socket.on("partidaIniciada", (data) => {
                 console.log("📥 Evento recibido:", data);
 
                 const miId = Number(localStorage.getItem("ID"));
-                console.log("🔍 Mi ID:", miId, "| Host:", data.userHost);
-                
-                if (data.ok && !data.esperando) {
-                    if (data.partida_id) {
-                        
-                        data.jugadores.map((id) => {
-                            if (id != miId) {
-                                localStorage.setItem("oponente_id", id);
-                            } 
+                console.log("🔍 Mi ID:", miId, "| Host:", data.turno);
 
-                        });
-                        
-                        localStorage.setItem("partida_id", data.partida_id);
-                        console.log("partida_id guardado:", data.partida_id);
-                    }
-                    setMensaje("¡La partida ha comenzado!");
-                    router.push(`/${data.nombreCategoria}`);
-                } else if (data.esperando) {
-                    if (data.userHost === miId) {
-                        setMensaje("Esperando oponente...");
-                        alert("Esperando oponente...");
-                    } else {
-                        console.log("No soy el host");
-                    }
+                // Guarda el ID del oponente en localStorage
+                if (data.turno === "jugador1") {
+                    localStorage.setItem("turno", "jugador1");
+                } else {
+                    localStorage.setItem("turno", "jugador2");
                 }
+
+                if (data.partida_id) {
+                    localStorage.setItem("partida_id", data.partida_id);
+                    console.log("partida_id guardado:", data.partida_id);
+                }
+
+                // Actualiza el mensaje y redirige
+                setMensaje("¡La partida ha comenzado!");
+                router.push(`/juego/${data.partida_id}`);  // Redirige al juego con la ID de la partida
             });
 
             return () => {
-                socket.off("partidaCreada");
+                socket.off("partidaIniciada");
             };
         }
     }, [socket, router]);
-
 
     const irFamosos = () => {
         manejarSeleccionCategoria(2);

@@ -258,12 +258,6 @@ export default function Tablero() {
             });
 
             result = await res.json();
-            //aca
-            /*
-            localStorage.setItem("partida_id", JSON.stringify(result.id_partida))
-            //const partidaa = JSON.parse(localStorage.getItem("partida"));
-            console.log("Partida almacenada en localStorage:", localStorage.getItem("partida_id"));
-            */
             const result = await res.json();
 
             // Actualizar el mensaje en el estado
@@ -284,7 +278,7 @@ export default function Tablero() {
             }
 
         } catch (error) {
-            console.error(error);
+            console.log(error);
             alert("Error al conectar con el servidor");
         }
 
@@ -300,7 +294,7 @@ export default function Tablero() {
 
         const partidaId = localStorage.getItem("partida_id");
         if (!partidaId) {
-            console.error("No hay partida_id en localStorage!");
+            console.log("No hay partida_id en localStorage!");
         }
     }, []);
 
@@ -372,7 +366,7 @@ export default function Tablero() {
             const jugador_id = localStorage.getItem("ID");
 
             if (!partida_id || !jugador_id) {
-                console.error("Faltan partida_id o jugador_id");
+                console.log("Faltan partida_id o jugador_id");
                 return;
             }
 
@@ -394,10 +388,10 @@ export default function Tablero() {
                 console.log("Mi carta asignada:", carta);
             } else {
                 setCartaAsignada(null);
-                console.error("Error:", data.mensaje);
+                console.log("Error:", data.mensaje);
             }
         } catch (error) {
-            console.error("Error al traer cartas:", error);
+            console.log("Error al traer cartas:", error);
             setCartaAsignada(null);
         }
     }
@@ -453,7 +447,7 @@ export default function Tablero() {
                 alert("Error: " + result.mensaje);
             }
         } catch (error) {
-            console.error("No salió de la partida", error);
+            console.log("No salió de la partida", error);
         }
     }
 
@@ -534,7 +528,7 @@ export default function Tablero() {
             </div>
 
             <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)}></Input>
-            <Boton color={"wpp"} texto={"Arriesgar"} onKeyDown={arriesgar}></Boton>
+            <Boton color={"wpp"} texto={"Arriesgar"} onClick={arriesgar}></Boton>
 
             <div className={styles.carta}>
                 {cartaAsignada && (

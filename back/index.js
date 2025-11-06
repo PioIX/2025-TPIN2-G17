@@ -38,8 +38,9 @@ const io = require('socket.io')(server, {
             "http://localhost:3001",
             "http://10.1.4.162:3000",
             "http://10.1.5.162:3000",
-        ], 
-        
+            "http://10.1.4.143:3000",
+        ],
+
         methods: ["GET", "POST", "PUT", "DELETE"],      // Métodos permitidos
         credentials: true                               // Habilitar el envío de cookies
     }
@@ -169,7 +170,7 @@ io.on("connection", (socket) => {
         socket.to(room).emit('jugadorSalio', { mensaje: "El otro jugador ha salido de la partida." });
     });
 
-    socket.on('necesitoId', (room)=>{
+    socket.on('necesitoId', (room) => {
         socket.to(room).emit('pedirId', { mensaje: "El otro jugador necesita el id." });
     })
 
@@ -878,6 +879,8 @@ app.post('/crearPartida', async (req, res) => {
 
             await realizarQuery(`
         UPDATE Usuarios SET esperando_categoria = NULL WHERE ID IN (${jugador1_id}, ${jugador2_id})
+
+
     `);
 
 
@@ -890,6 +893,8 @@ app.post('/crearPartida', async (req, res) => {
                 partida_id: partida_id, // 👈 Ahora es un número
             });
 
+            io.to(jugador1_id).emit("partidaIniciada", { partida_id, turno: "jugador1" }); 
+            io.to(jugador2_id).emit("partidaIniciada", { partida_id, turno: "jugador2" });
 
             return res.send({ ok: true, msg: "Partida creada con éxito", nombreCategoria, id_partida: partida_id });
 
@@ -919,6 +924,90 @@ app.post('/crearPartida', async (req, res) => {
         return res.status(500).send({ ok: false, mensaje: "Error al crear partida", error: err.message });
     }
 });
+/*
+app.post('/crearPartida', async (req, res) => {
+    const { categoria_id, jugador1_id } = req.body;
+
+    try {
+        // Verifica si los datos necesarios están presentes
+        if (!categoria_id || !jugador1_id) {
+            console.error('Faltan datos necesarios en la solicitud');
+            return res.status(400).send({ ok: false, mensaje: 'Faltan datos en la solicitud' });
+        }
+
+        // Verificar si existe un oponente
+        const oponente = await realizarQuery(`
+            SELECT * FROM Usuarios WHERE esperando_categoria = ${categoria_id} AND ID != ${jugador1_id} LIMIT 1
+        `);
+
+        const categoria = await realizarQuery(`
+            SELECT nombre FROM Categorias WHERE ID = ${categoria_id}
+        `);
+
+        if (categoria.length === 0) {
+            return res.status(404).send({ ok: false, mensaje: "Categoría no encontrada" });
+        }
+
+        const nombreCategoria = categoria[0].nombre;
+
+        if (oponente.length > 0) {
+            const jugador2_id = oponente[0].ID;
+
+            // Asignar personajes aleatorios
+            const personajesJugador1 = await realizarQuery(`
+                SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
+            `);
+            const personajesJugador2 = await realizarQuery(`
+                SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
+            `);
+
+            const personajeJugador1_id = personajesJugador1[0].ID;
+            const personajeJugador2_id = personajesJugador2[0].ID;
+
+            // Insertar la partida en la base de datos
+            const resultadoInsert = await realizarQuery(`
+                INSERT INTO Partidas (jugador1_id, jugador2_id, personaje_jugador1_id, personaje_jugador2_id, estado)
+                VALUES (${jugador1_id}, ${jugador2_id}, ${personajeJugador1_id}, ${personajeJugador2_id}, 'en curso')
+            `);
+
+            const partida_id = resultadoInsert.insertId;
+
+            // Actualizar los jugadores en la base de datos para que dejen de esperar
+            await realizarQuery(`
+                UPDATE Usuarios SET esperando_categoria = NULL WHERE ID IN (${jugador1_id}, ${jugador2_id})
+            `);
+
+            // Emitir los eventos de partida iniciada con los turnos asignados
+            io.to(jugador1_id).emit("partidaIniciada", { partida_id, turno: "jugador1" });
+            io.to(jugador2_id).emit("partidaIniciada", { partida_id, turno: "jugador2" });
+
+            // Responder con éxito
+            return res.send({ ok: true, msg: "Partida creada con éxito", nombreCategoria, partida_id });
+
+        } else {
+            // Si no hay oponente, actualizar la espera
+            await realizarQuery(`
+                UPDATE Usuarios SET esperando_categoria = ${categoria_id} WHERE ID = ${jugador1_id}
+            `);
+
+            io.emit("partidaCreada", {
+                ok: true,
+                mensaje: "Esperando oponente...",
+                esperando: true,
+                userHost: jugador1_id,
+                nombreCategoria,
+                partida_id: null
+            });
+
+            return res.send({ ok: true, msg: "Esperando oponente...", esperando: true, nombreCategoria });
+        }
+
+    } catch (err) {
+        console.error('Error en backend:', err);
+        return res.status(500).send({ ok: false, mensaje: "Error al crear partida", error: err.message });
+    }
+});*/
+
 
 
 //arriesgar personaje
@@ -936,7 +1025,7 @@ app.post("/arriesgar", async (req, res) => {
         const esJugador1 = id_jugador === partida.jugador1_id;
         const personajeOponenteId = esJugador1
             ? partida.personaje_jugador2_id
-            
+
             : partida.personaje_jugador1_id;
 
 
