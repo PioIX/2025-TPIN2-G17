@@ -110,6 +110,10 @@ export default function Tablero() {
             setMensajes((prev) => [...prev, data]);
         });
 
+        socket.on("pedirId", (data) =>{
+            socket.emit("idJugadores", {room, idPropio, idRival});
+        })
+
 
         socket.on("idRival", (data) => {
             console.log("Data: ", data, " IdPropio: ", idPropio)
@@ -143,6 +147,23 @@ export default function Tablero() {
             }
         }
     }, [idPropio, idRival])
+
+    
+
+    useEffect(()=>{
+        const pedirId = () =>{
+            if (jugador == "") {
+                if(!socket) return
+                console.log("necesito ID")
+                socket.emit("necesitoId", {room})
+            }
+            else{
+                clearTimeout(myTimeout);
+            }
+        }
+        const myTimeout = setTimeout(pedirId, 5000);
+
+    },[])
 
 
     useEffect(() => {
@@ -377,6 +398,7 @@ export default function Tablero() {
     }
 
     //salir
+    /*
     async function salida() {
         const partida_id = localStorage.getItem("partida_id");
         try {
@@ -400,7 +422,46 @@ export default function Tablero() {
         } catch (error) {
             console.error("No salió de la partida", error);
         }
+    }*/
+
+    async function salida() {
+        const partida_id = localStorage.getItem("partida_id");
+        const room = localStorage.getItem("room");
+        
+        try {
+            let response = await fetch("http://localhost:4000/salir", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id_partida: partida_id,
+                }),
+            });
+
+            let result = await response.json();
+            if (result.ok) {
+                socket.emit('salirDePartida', room);
+                alert("Saliste de la partida");
+                router.push("/inicio");
+            } else {
+                alert("Error: " + result.mensaje);
+            }
+        } catch (error) {
+            console.error("No salió de la partida", error);
+        }
     }
+
+    useEffect(() => {
+        if (!socket) return;
+        socket.on("jugadorSalio", (data) => {
+            alert(data.mensaje);
+            router.push("/inicio");
+        });
+
+        // Limpiar el evento cuando el componente se desmonte
+        return () => socket.off("jugadorSalio");
+    }, [socket]);
 
     return (
         <>

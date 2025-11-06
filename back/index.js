@@ -44,11 +44,6 @@ const io = require('socket.io')(server, {
     }
 });
 
-
-
-
-
-
 const sessionMiddleware = session({
     //Elegir tu propia key secreta
     secret: "supersarasa",
@@ -109,30 +104,7 @@ io.on("connection", (socket) => {
                 console.error("❌ Error al finalizar la partida:", error);
             }
         });
-        /*
-        socket.on("user_navigated_back", async ({ partida_id, jugador_id }) => {
-            console.log(`🛑 Jugador ${jugador_id} abandonó la partida ${partida_id}`);
 
-            try {
-                // Actualizar el estado en la BD
-                await realizarQuery(`
-                UPDATE Partidas 
-                SET estado = 'finalizada' 
-                WHERE id = ${partida_id}
-            `);
-
-                // Avisar al oponente
-                const room = req.session?.room;
-                if (room) {
-                    socket.to(room).emit("partida_finalizada", {
-                        mensaje: "El oponente abandonó la partida.",
-                    });
-                }
-            } catch (error) {
-                console.error("❌ Error al finalizar la partida:", error);
-            }
-        });
-        */
     });
 
 
@@ -191,6 +163,14 @@ io.on("connection", (socket) => {
         console.log({ room, id, idRival })
         io.to(room).emit('idRival', { id: id, idRival: idRival });
     });
+
+    socket.on('salirDePartida', (room) => {
+        socket.to(room).emit('jugadorSalio', { mensaje: "El otro jugador ha salido de la partida." });
+    });
+
+    socket.on('necesitoId', (room)=>{
+        socket.to(room).emit('pedirId', { mensaje: "El otro jugador necesita el id." });
+    })
 
 });
 //                SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
