@@ -57,6 +57,28 @@ export default function Tablero() {
         socket.emit('reiniciarTemporizador', { room });  // Enviar evento al backend
     };
 
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on("partidaIniciada", ({ partida_id, turno }) => {
+            console.log("Partida iniciada:", partida_id, "Turno:", turno);
+
+            // Guardar el id de la partida en el localStorage
+            localStorage.setItem("partida_id", partida_id);
+
+            // Guardar el turno actual
+            setTurno(turno);
+
+            // Inicializar el temporizador en el front-end
+            setSegundos(60);
+        });
+
+        return () => {
+            socket.off("partidaIniciada");
+        };
+    }, [socket]);
+
+
     async function traerPersonajes() {
         try {
             const response = await fetch(url + "/farandula", {
@@ -90,15 +112,15 @@ export default function Tablero() {
         traerCarta();
     }, []);
 
-/*
-    useEffect(() => {
-        let id = localStorage.getItem('ID');
-        setIdPropio(id)
-        console.log("Soy: ", id)
-        if (!socket) return;
-        const room = localStorage.getItem("room");
-        socket.emit("idJugadores", { room, id, idRival });
-    }, [socket, isConnected])*/
+    /*
+        useEffect(() => {
+            let id = localStorage.getItem('ID');
+            setIdPropio(id)
+            console.log("Soy: ", id)
+            if (!socket) return;
+            const room = localStorage.getItem("room");
+            socket.emit("idJugadores", { room, id, idRival });
+        }, [socket, isConnected])*/
 
 
     useEffect(() => {
@@ -272,8 +294,10 @@ export default function Tablero() {
             if (result.ok) {
                 if (result.gano) {
                     alert(`¡Ganaste! El personaje correcto era ${result.personajeCorrecto}.`);
+                    reiniciarTemporizador()
                 } else {
                     alert(`Perdiste. El personaje correcto era ${result.personajeCorrecto}.`);
+                    reiniciarTemporizador()
                 }
 
 
@@ -286,6 +310,7 @@ export default function Tablero() {
         } catch (error) {
             console.error(error);
             alert("Error al conectar con el servidor");
+            reiniciarTemporizador()
         }
 
 
@@ -448,6 +473,7 @@ export default function Tablero() {
             if (result.ok) {
                 socket.emit('salirDePartida', room);
                 alert("Saliste de la partida");
+                reiniciarTemporizador();
                 router.push("/inicio");
             } else {
                 alert("Error: " + result.mensaje);
@@ -511,6 +537,7 @@ export default function Tablero() {
                 {(turno === "jugador1" && jugador === "jugador1") || (turno === "jugador2" && jugador === "jugador2") ? (
                     <>
                         {/* Si es el turno del jugador, mostrar el input para hacer una pregunta */}
+
                         <Input
                             placeholder={"Hace una pregunta"}
                             color={"registro"}
@@ -524,6 +551,7 @@ export default function Tablero() {
                                 // No cambiar el turno aún, esperar la respuesta del oponente
                             }}
                         />
+
                     </>
                 ) : (turno === "jugador2" && jugador === "jugador1") || (turno === "jugador1" && jugador === "jugador2") ? (
                     <>
@@ -532,9 +560,10 @@ export default function Tablero() {
                     </>
                 ) : null}
             </div>
-
-            <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)}></Input>
-            <Boton color={"wpp"} texto={"Arriesgar"} onKeyDown={arriesgar}></Boton>
+            <div className={styles.arriesgarr}>
+                <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)}></Input>
+                <Boton color={"wpp"} texto={"Arriesgar"} onClick={arriesgar}></Boton>
+            </div>
 
             <div className={styles.carta}>
                 {cartaAsignada && (

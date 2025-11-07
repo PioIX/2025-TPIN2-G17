@@ -38,8 +38,9 @@ const io = require('socket.io')(server, {
             "http://localhost:3001",
             "http://10.1.4.162:3000",
             "http://10.1.5.162:3000",
-        ], 
-        
+            "http://10.1.5.91:3000",
+        ],
+
         methods: ["GET", "POST", "PUT", "DELETE"],      // Métodos permitidos
         credentials: true                               // Habilitar el envío de cookies
     }
@@ -169,9 +170,25 @@ io.on("connection", (socket) => {
         socket.to(room).emit('jugadorSalio', { mensaje: "El otro jugador ha salido de la partida." });
     });
 
-    socket.on('necesitoId', (room)=>{
+    socket.on('necesitoId', (room) => {
         socket.to(room).emit('pedirId', { mensaje: "El otro jugador necesita el id." });
     })
+
+    socket.on('partidaCreada', ({ partida_id, jugadores, turnoInicial }) => {
+        // Aquí se asegura que cuando se crea la partida, se reinicie el temporizador y se asigne el turno
+        jugadores.forEach((jugadorId, index) => {
+            io.to(jugadorId).emit("partidaIniciada", {
+                partida_id,
+                turno: index === 0 ? "jugador1" : "jugador2", // Asegura que el primer jugador obtenga el turno1 y el otro jugador turno2
+            });
+        });
+
+        // Reiniciar temporizador para ambos jugadores
+        reiniciarTemporizador(partida_id); // Asegúrate de pasar el room adecuado si necesitas hacerlo por habitación
+
+        // Emitir a todos que la partida ha comenzado (esto puede ser útil para otros jugadores observadores)
+        io.emit('partidaComenzada', { partida_id });
+    });
 
 });
 //                SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
@@ -936,7 +953,7 @@ app.post("/arriesgar", async (req, res) => {
         const esJugador1 = id_jugador === partida.jugador1_id;
         const personajeOponenteId = esJugador1
             ? partida.personaje_jugador2_id
-            
+
             : partida.personaje_jugador1_id;
 
 

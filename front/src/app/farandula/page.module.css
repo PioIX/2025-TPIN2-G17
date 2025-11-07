@@ -159,3 +159,21 @@
   /* Transición para color */
   align-items: center;
 }
+
+.arriesgarr {
+  display: flex;
+  align-items: left;
+  justify-content: left;
+  /* Esto centrará el bloque en la página */
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  /* Limita el ancho del contenedor */
+  box-sizing: border-box;
+  margin-top: -55px;
+}
+
+
+.arriesgarr input {
+  margin-right: 10px;
+}
