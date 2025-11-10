@@ -39,6 +39,7 @@ const io = require('socket.io')(server, {
             "http://10.1.4.162:3000",
             "http://10.1.5.162:3000",
             "http://10.1.5.91:3000",
+            "http://10.1.5.140:3000",
         ],
 
         methods: ["GET", "POST", "PUT", "DELETE"],      // Métodos permitidos
