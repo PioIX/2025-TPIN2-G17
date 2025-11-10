@@ -57,27 +57,6 @@ export default function Tablero() {
         socket.emit('reiniciarTemporizador', { room });  // Enviar evento al backend
     };
 
-    useEffect(() => {
-        if (!socket) return;
-
-        socket.on("partidaIniciada", ({ partida_id, turno }) => {
-            console.log("Partida iniciada:", partida_id, "Turno:", turno);
-
-            // Guardar el id de la partida en el localStorage
-            localStorage.setItem("partida_id", partida_id);
-
-            // Guardar el turno actual
-            setTurno(turno);
-
-            // Inicializar el temporizador en el front-end
-            setSegundos(60);
-        });
-
-        return () => {
-            socket.off("partidaIniciada");
-        };
-    }, [socket]);
-
 
     async function traerPersonajes() {
         try {
@@ -112,38 +91,12 @@ export default function Tablero() {
         traerCarta();
     }, []);
 
-    /*
-        useEffect(() => {
-            let id = localStorage.getItem('ID');
-            setIdPropio(id)
-            console.log("Soy: ", id)
-            if (!socket) return;
-            const room = localStorage.getItem("room");
-            socket.emit("idJugadores", { room, id, idRival });
-        }, [socket, isConnected])*/
-
-
     useEffect(() => {
         if (!socket) return;
-
-
         socket.on("newMessage", (data) => {
             console.log("📩 Nuevo mensaje:", data);
             setMensajes((prev) => [...prev, data]);
         });
-        /*
-        socket.on("pedirId", (data) => {
-            socket.emit("idJugadores", { room, idPropio, idRival });
-        })
-
-        
-                socket.on("idRival", (data) => {
-                    console.log("Data: ", data, " IdPropio: ", idPropio)
-                    if (data.id != idPropio) {
-                        console.log("📩 Id rival:", data);
-                        setIdRival(data.id)
-                    }
-                });*/
     }, [socket]);
 
 
@@ -160,14 +113,8 @@ export default function Tablero() {
             else {
                 setJugador("jugador1")
             }
-            /*
-            if (flagYaEnvie == 0) {
-                setFlagYaEnvie(1)
-                const room = localStorage.getItem("room");
-                let id = localStorage.getItem('ID');
-                console.log("Enviando id del primero q entro")
-                socket.emit("idJugadores", { room, id, idRival });
-            }*/
+            const room = localStorage.getItem("room")
+            socket.emit('reiniciarTemporizador', {room: room})
         }
     }, [idPropio, idRival])
 
@@ -428,31 +375,6 @@ export default function Tablero() {
     }
 
     //salir
-    /*
-    async function salida() {
-        const partida_id = localStorage.getItem("partida_id");
-        try {
-            let response = await fetch(url + "/salir", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    id_partida: partida_id,
-                }),
-            });
- 
-            let result = await response.json();
-            if (result.ok) {
-                alert("saliste de la partida");
-                router.push("/inicio");
-            } else {
-                alert("Error: " + result.mensaje);
-            }
-        } catch (error) {
-            console.error("No salió de la partida", error);
-        }
-    }*/
 
     async function salida() {
         const partida_id = localStorage.getItem("partida_id");

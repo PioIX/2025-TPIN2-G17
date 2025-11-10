@@ -49,6 +49,7 @@
   justify-content: center;
   align-items: center;
 }
+
 /*corregir*/
 .chatBox {
   width: 100%;
@@ -58,18 +59,126 @@
   border-radius: 10px;
   padding: 15px;
   height: 150px;
-  overflow-y: auto; 
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-/*
-.mensaje {
-  background-color: white;
-  border-radius: 8px;
-  padding: 8px 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+.descartada {
+  filter: grayscale(100%) contrast(50%);
+  opacity: 1;
 }
-*/
 
+/* Contenedor de la carta */
+/* Contenedor de la carta alineado a la derecha */
+.carta {
+  position: absolute;
+  top: 105%;
+  /* Posiciona la carta más cerca del borde inferior */
+  right: 200px;
+  /* Mantén el valor de la distancia desde la derecha */
+  display: flex;
+  flex-direction: column;
+  /* Apila el título y las cartas verticalmente */
+  align-items: center;
+  /* Centra el contenido */
+  gap: 10px;
+  /* Espaciado entre el título y las cartas */
+  padding: 10px;
+  z-index: 10;
+}
 
+.carta h2 {
+  font-size: 18px;
+  /* Tamaño del texto */
+  color: #89a5eb;
+  /* Color del texto */
+  margin: 0 0 10px 0;
+  /* Espaciado en la parte inferior del título */
+  font-weight: bold;
+  /* Resalta el título */
+  text-align: center;
+  /* Centra el título */
+}
+
+/* Para los botones dentro de la carta */
+.carta>.botonImagen {
+  width: 150px;
+  /* Tamaño de cada imagen */
+  height: 150px;
+  /* Tamaño de cada imagen */
+  object-fit: cover;
+  /* Para que la imagen no se deforme */
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Efecto hover para el botón */
+.carta>.botonImagen:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Para el texto dentro del botón de imagen */
+.carta>.botonImagen span {
+  font-weight: bold;
+  color: #333;
+  margin-top: 8px;
+}
+
+/* Estilo para el contenedor del temporizador */
+.tcontainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* Temporizador - el número de segundos */
+.temporizador {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #89a5eb;
+  background-color: #f4f4f4;
+  padding: 20px 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  transition: color 0.3s ease, background-color 0.3s ease;
+  /* Transición para color */
+  align-items: center;
+}
+
+.arriesgarr {
+  display: flex;
+  align-items: left;
+  justify-content: left;
+  /* Esto centrará el bloque en la página */
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  /* Limita el ancho del contenedor */
+  box-sizing: border-box;
+  margin-top: -60px;
+}
+
+.arriesgarr input {
+  margin-right: 10px;
+}
+
+.salir {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  z-index: 10;
+}

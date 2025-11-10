@@ -175,22 +175,6 @@ io.on("connection", (socket) => {
         socket.to(room).emit('pedirId', { mensaje: "El otro jugador necesita el id." });
     })
 
-    socket.on('partidaCreada', ({ partida_id, jugadores, turnoInicial }) => {
-        // Aquí se asegura que cuando se crea la partida, se reinicie el temporizador y se asigne el turno
-        jugadores.forEach((jugadorId, index) => {
-            io.to(jugadorId).emit("partidaIniciada", {
-                partida_id,
-                turno: index === 0 ? "jugador1" : "jugador2", // Asegura que el primer jugador obtenga el turno1 y el otro jugador turno2
-            });
-        });
-
-        // Reiniciar temporizador para ambos jugadores
-        reiniciarTemporizador(partida_id); // Asegúrate de pasar el room adecuado si necesitas hacerlo por habitación
-
-        // Emitir a todos que la partida ha comenzado (esto puede ser útil para otros jugadores observadores)
-        io.emit('partidaComenzada', { partida_id });
-    });
-
 });
 //                SELECT * FROM Personajes WHERE categoria_id = ${categoria_id} ORDER BY RAND() LIMIT 1
 app.get('/', function (req, res) {
@@ -214,6 +198,7 @@ function getJugadoresPorSala(roomId) {
 //timer
 function reiniciarTemporizador(room) {
     timers[room] = 60;  // Reinicia el temporizador a 60 segundos
+    console.log("Reiniciar")
     io.to(room).emit('actualizarTemporizador', { timer: timers[room] });  // Emitir el temporizador actualizado
 }
 
@@ -436,6 +421,34 @@ app.get('/cantantes', async (req, res) => {
 app.get('/scaloneta', async (req, res) => {
     try {
         const personajes = await realizarQuery("SELECT * FROM Personajes WHERE categoria_id = 4");
+        console.log("personajes:", personajes);
+        if (!personajes || personajes.length === 0) {
+            return res.json({ ok: false, mensaje: "No hay personajes" });
+        }
+        res.json({
+            ok: true,
+            personajes: personajes.map(personaje => ({
+                id: personaje.ID,
+                nombre: personaje.nombre,
+                foto: personaje.foto,
+                categoria_id: personaje.categoria_id
+            }))
+        });
+
+
+    } catch (error) {
+        console.error("Error en la consulta:", error);
+        res.status(500).json({
+            ok: false,
+            mensaje: "Error en el servidor",
+            error: error.message
+        });
+    }
+});
+
+app.get('/profesores', async (req, res) => {
+    try {
+        const personajes = await realizarQuery("SELECT * FROM Personajes WHERE categoria_id = 5");
         console.log("personajes:", personajes);
         if (!personajes || personajes.length === 0) {
             return res.json({ ok: false, mensaje: "No hay personajes" });

@@ -123,12 +123,12 @@ export default function LoginPage() {
     };
 
     const irScaloneta = () => {
-        manejarSeleccionCategoria(5);
+        manejarSeleccionCategoria(4);
         socket.emit("joinRoom", { room: "scaloneta" });
     };
 
     const irProfesores = () => {
-        manejarSeleccionCategoria(3);
+        manejarSeleccionCategoria(5);
         socket.emit("joinRoom", { room: "profesores" });
     };
 
@@ -139,7 +139,7 @@ export default function LoginPage() {
     };
 
     const irCantantes = () => {
-        manejarSeleccionCategoria(4);
+        manejarSeleccionCategoria(3);
         socket.emit("joinRoom", { room: "cantantes" });
     };
 
