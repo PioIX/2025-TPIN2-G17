@@ -237,7 +237,7 @@ app.post('/login', async function (req, res) {
                 res.send({ ok: true, admin: true, id: resultado[0].ID })
             }
         } else {
-            res.send({ message: "Error, no se encontró ningun usuario" })
+            res.send({ message: "Error, Usuario o contraseña incorrectos" })
         }
 
 
@@ -930,18 +930,16 @@ app.post('/crearPartida', async (req, res) => {
                 UPDATE Usuarios SET esperando_categoria = ${categoria_id} WHERE ID = ${jugador1_id}
             `);
 
-
             io.emit("partidaCreada", {
                 ok: true,
                 mensaje: "Esperando oponente...",
                 esperando: true,
                 userHost: jugador1_id,
                 nombreCategoria,
-                partida_id,
+                //partida_id,
             });
 
-
-            return res.send({ ok: true, msg: "Esperando oponente...", esperando: true, nombreCategoria, partida_id });
+            return res.send({ ok: true, msg: "Esperando oponente...", esperando: true, nombreCategoria, /*partida_id*/ });
         }
 
 

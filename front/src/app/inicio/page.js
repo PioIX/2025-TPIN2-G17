@@ -46,13 +46,12 @@ export default function LoginPage() {
                 body: JSON.stringify({
                     categoria_id: categoriaId,
                     jugador1_id: jugadorId,
-                    partida_id: localStorage.getItem("partida_id"),
+                    //partida_id: localStorage.getItem("partida_id"),
                 }),
             });
 
             const result = await res.json();
             setMensaje(result.mensaje);
-
 
             console.log(result)
             console.log(result.userHost)
@@ -73,9 +72,7 @@ export default function LoginPage() {
             alert("Error al conectar con el servidor");
         }
 
-        setLoading(false); // Termina el estado de carga
     }
-
 
     useEffect(() => {
         if (socket) {
@@ -109,9 +106,10 @@ export default function LoginPage() {
                     }
                 }
             });
-
+            console.log("EL MENSAJE ES:",mensaje)
             return () => {
                 socket.off("partidaCreada");
+                setLoading(false); // Termina el estado de carga
             };
         }
     }, [socket, router]);
