@@ -40,6 +40,7 @@ const io = require('socket.io')(server, {
             "http://10.1.5.162:3000",
             "http://10.1.5.91:3000",
             "http://10.1.5.140:3000",
+            "http://10.1.5.93:3000", 
         ],
 
         methods: ["GET", "POST", "PUT", "DELETE"],      // Métodos permitidos
@@ -916,13 +917,13 @@ app.post('/crearPartida', async (req, res) => {
                 ok: true,
                 mensaje: "Partida creada con éxito",
                 nombreCategoria,
-                userHost: jugador1_id,
+                userHost: Number(jugador1_id),
                 jugadores: [Number(jugador1_id), Number(oponente[0].ID)],
                 partida_id: partida_id, // 👈 Ahora es un número
             });
 
 
-            return res.send({ ok: true, msg: "Partida creada con éxito", nombreCategoria, id_partida: partida_id });
+            return res.send({ ok: true, msg: "Partida creada con éxito", nombreCategoria, id_partida: partida_id, userHost: jugador1_id, });
 
 
         } else {
@@ -934,7 +935,7 @@ app.post('/crearPartida', async (req, res) => {
                 ok: true,
                 mensaje: "Esperando oponente...",
                 esperando: true,
-                userHost: jugador1_id,
+                userHost: Number(jugador1_id),
                 nombreCategoria,
                 //partida_id,
             });

@@ -225,8 +225,6 @@ export default function Tablero() {
                     nombre_arriesgado: nombreArriesgado
                 }),
             });
-
-            result = await res.json();
             //aca
             /*
             localStorage.setItem("partida_id", JSON.stringify(result.id_partida))
@@ -234,7 +232,6 @@ export default function Tablero() {
             console.log("Partida almacenada en localStorage:", localStorage.getItem("partida_id"));
             */
             const result = await res.json();
-
             // Actualizar el mensaje en el estado
             setMensaje(result.mensaje);
 

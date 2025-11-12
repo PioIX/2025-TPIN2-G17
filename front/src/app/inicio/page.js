@@ -27,6 +27,12 @@ export default function LoginPage() {
         }
     }, []);
 
+        useEffect(() => {
+        if (mensaje) {
+            console.log("EL MENSAJE SE ACTUALIZO:", mensaje)
+        }
+    }, [mensaje]);
+
     async function manejarSeleccionCategoria(categoriaId) {
         if (!jugadorId) {
             alert("No se encontró el ID del jugador. Por favor, inicia sesión.");
@@ -51,7 +57,7 @@ export default function LoginPage() {
             });
 
             const result = await res.json();
-            setMensaje(result.mensaje);
+            setMensaje(result.msg);
 
             console.log(result)
             console.log(result.userHost)
@@ -78,7 +84,7 @@ export default function LoginPage() {
         if (socket) {
             socket.on("partidaCreada", (data) => {
                 console.log("📥 Evento recibido:", data);
-
+                
                 const miId = Number(localStorage.getItem("ID"));
                 console.log("🔍 Mi ID:", miId, "| Host:", data.userHost);
                 
@@ -89,23 +95,22 @@ export default function LoginPage() {
                             if (id != miId) {
                                 localStorage.setItem("oponente_id", id);
                             } 
-
                         });
-                        
                         localStorage.setItem("partida_id", data.partida_id);
                         console.log("partida_id guardado:", data.partida_id);
                     }
                     setMensaje("¡La partida ha comenzado!");
                     router.push(`/${data.nombreCategoria}`);
                 } else if (data.esperando) {
-                    if (data.userHost === miId) {
+                    if (data.userHost == miId) {
                         setMensaje("Esperando oponente...");
-                        alert("Esperando oponente...");
+                        console.log("esperando oponente:", mensaje)
                     } else {
                         console.log("No soy el host");
                     }
                 }
             });
+            
             console.log("EL MENSAJE ES:",mensaje)
             return () => {
                 socket.off("partidaCreada");
@@ -157,7 +162,7 @@ export default function LoginPage() {
             </div>
 
             {loading && <p>Esperando a que se cree la partida...</p>}
-            {mensaje && <p>{mensaje}</p>}
+            {mensaje && <p>Esperando oponente...</p>}
 
             <div className={styles.footer}>
                 <footer>
