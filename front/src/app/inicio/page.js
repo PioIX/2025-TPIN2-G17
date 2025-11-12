@@ -10,7 +10,7 @@ import { useConnection } from "@/hooks/useConnection";
 
 export default function LoginPage() {
     const router = useRouter();
-    const {url} = useConnection()
+    const { url } = useConnection()
     const { socket } = useSocket();
     const [loading, setLoading] = useState(false);
     const [mensaje, setMensaje] = useState("");
@@ -27,7 +27,7 @@ export default function LoginPage() {
         }
     }, []);
 
-        useEffect(() => {
+    useEffect(() => {
         if (mensaje) {
             console.log("EL MENSAJE SE ACTUALIZO:", mensaje)
         }
@@ -77,28 +77,29 @@ export default function LoginPage() {
             console.log(error);
             alert("Error al conectar con el servidor");
         }
-
+        setLoading(false); // Termina el estado de carga
     }
 
     useEffect(() => {
         if (socket) {
             socket.on("partidaCreada", (data) => {
                 console.log("📥 Evento recibido:", data);
-                
+
                 const miId = Number(localStorage.getItem("ID"));
                 console.log("🔍 Mi ID:", miId, "| Host:", data.userHost);
-                
+
                 if (data.ok && !data.esperando) {
                     if (data.partida_id) {
-                        
+
                         data.jugadores.map((id) => {
                             if (id != miId) {
                                 localStorage.setItem("oponente_id", id);
-                            } 
+                            }
                         });
                         localStorage.setItem("partida_id", data.partida_id);
                         console.log("partida_id guardado:", data.partida_id);
                     }
+
                     setMensaje("¡La partida ha comenzado!");
                     router.push(`/${data.nombreCategoria}`);
                 } else if (data.esperando) {
@@ -110,11 +111,11 @@ export default function LoginPage() {
                     }
                 }
             });
-            
-            console.log("EL MENSAJE ES:",mensaje)
+
+            console.log("EL MENSAJE ES:", mensaje)
             return () => {
                 socket.off("partidaCreada");
-                setLoading(false); // Termina el estado de carga
+
             };
         }
     }, [socket, router]);
@@ -153,7 +154,9 @@ export default function LoginPage() {
                     <Title texto={"¿Quién es quién?"} />
                 </header>
             </div>
-            <div className={styles.container}>
+
+            {/* Ocultamos los botones cuando estamos esperando al oponente */}
+            <div className={`${styles.container} ${mensaje ? styles.hidden : ''}`}>
                 <Boton texto={"Famosos"} color={"famosos"} onClick={irFamosos} />
                 <Boton texto={"Scaloneta"} color={"scaloneta"} onClick={irScaloneta} />
                 <Boton texto={"Profesores"} color={"profesores"} onClick={irProfesores} />
@@ -161,8 +164,13 @@ export default function LoginPage() {
                 <Boton texto={"Cantantes"} color={"cantantes"} onClick={irCantantes} />
             </div>
 
-            {loading && <p>Esperando a que se cree la partida...</p>}
-            {mensaje && <p>Esperando oponente...</p>}
+            {/* Mostramos el spinner cuando se está esperando */}
+            {mensaje && (
+                <div className={styles.espereContainer}>
+                    <div className={styles.spinner}></div>
+                    <p>Esperando oponente...</p>
+                </div>
+            )}
 
             <div className={styles.footer}>
                 <footer>
@@ -171,4 +179,5 @@ export default function LoginPage() {
             </div>
         </>
     );
+
 }
