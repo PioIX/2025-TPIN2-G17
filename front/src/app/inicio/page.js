@@ -172,6 +172,7 @@ export default function LoginPage() {
                 </div>
             )}
 
+
             <div className={styles.footer}>
                 <footer>
                     <h2>Arrufat - Gaetani - Suarez - Zuran</h2>

@@ -47,26 +47,28 @@
 }
 
 /*efectos*/
-.espere-container {
+.espereContainer {
     display: flex;
     justify-content: center;
     align-items: center;
     position: fixed;
     top: 0;
-    left: 100%;
+    left: 0;
+    /* Asegura que se alinee desde la izquierda */
     width: 100%;
     height: 100vh;
     /* Ocupa toda la altura de la pantalla */
     background-color: rgba(0, 0, 0, 0.5);
     /* Fondo oscuro semi-transparente */
     z-index: 9999;
-    /* Asegura que esté encima de otros elementos */
+    flex-direction: column;
+    /* Para que el texto esté debajo del spinner */
 }
 
 .spinner {
     border: 16px solid #f3f3f3;
     /* Fondo gris claro */
-    border-top: 16px solid #3498db;
+    border-top: 16px solid #89a5eb;
     /* Color del spinner */
     border-radius: 50%;
     /* Hace que el borde sea redondo */
@@ -76,12 +78,15 @@
     /* Tamaño del spinner */
     animation: spin 2s linear infinite;
     /* Animación para que gire */
+    margin-bottom: 20px;
+    /* Espacio entre el spinner y el texto */
 }
 
 @keyframes spin {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
