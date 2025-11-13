@@ -163,6 +163,8 @@ io.on("connection", (socket) => {
         io.to(room).emit('cambiarTurno', { room, nuevoTurno });
         console.log(`🔄 Cambio de turno en ${room}: ${nuevoTurno}`);
         reiniciarTemporizador(room);
+        const colorFondo = nuevoTurno === 'jugador1' ? 'turno-jugador1' : 'turno-jugador2';
+        io.to(room).emit('cambiarFondo', { colorFondo });
     });
 
     socket.on('idJugadores', ({ room, id, idRival }) => {
@@ -252,7 +254,6 @@ app.post('/login', async function (req, res) {
         });
     }
 });
-
 
 //registro
 app.post('/registro', async function (req, res) {
