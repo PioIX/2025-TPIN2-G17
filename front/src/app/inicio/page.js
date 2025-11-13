@@ -149,30 +149,24 @@ export default function LoginPage() {
 
     return (
         <>
-            <div className={styles.header}>
-                <header>
-                    <Title texto={"¿Quién es quién?"} />
-                </header>
-            </div>
-
-            {/* Ocultamos los botones cuando estamos esperando al oponente */}
-            <div className={`${styles.container} ${mensaje ? styles.hidden : ''}`}>
-                <Boton texto={"Famosos"} color={"famosos"} onClick={irFamosos} />
-                <Boton texto={"Scaloneta"} color={"scaloneta"} onClick={irScaloneta} />
-                <Boton texto={"Profesores"} color={"profesores"} onClick={irProfesores} />
-                <Boton texto={"Farandula"} color={"farandula"} onClick={irFarandula} />
-                <Boton texto={"Cantantes"} color={"cantantes"} onClick={irCantantes} />
-            </div>
-
-            {/* Mostramos el spinner cuando se está esperando */}
-            {mensaje && (
-                <div className={styles.espereContainer}>
-                    <div className={styles.spinner}></div>
-                    <p>Esperando oponente...</p>
+            <div className={styles.bodya}>
+                {/* Ocultamos los botones cuando estamos esperando al oponente */}
+                <div className={`${styles.container} ${mensaje ? styles.hidden : ''}`}>
+                    <Boton texto={"Famosos"} color={"famosos"} onClick={irFamosos} />
+                    <Boton texto={"Scaloneta"} color={"scaloneta"} onClick={irScaloneta} />
+                    <Boton texto={"Profesores"} color={"profesores"} onClick={irProfesores} />
+                    <Boton texto={"Farandula"} color={"farandula"} onClick={irFarandula} />
+                    <Boton texto={"Cantantes"} color={"cantantes"} onClick={irCantantes} />
                 </div>
-            )}
 
-
+                {/* Mostramos el spinner cuando se está esperando */}
+                {mensaje && (
+                    <div className={styles.espereContainer}>
+                        <div className={styles.spinner}></div>
+                        <p>Esperando oponente...</p>
+                    </div>
+                )}
+            </div>
             <div className={styles.footer}>
                 <footer>
                     <h2>Arrufat - Gaetani - Suarez - Zuran</h2>
