@@ -1,15 +1,12 @@
-
 .footer {
     background-color: #ffc978;
     color: white;
-    position: absolute;
-    bottom: 0;
     width: 100%;
-    margin: 0;
     padding: 20px 0 10px 0;
-    /* Ajusta el padding superior para bajarlo un poquito */
     text-align: center;
-    /* Centra el texto, si lo necesitas */
+    position: relative;  /* Cambié 'absolute' por 'relative' para evitar que se solape */
+    margin-top: auto;  /* Esto asegura que el footer se quede abajo */
+    bottom: 0;
 }
 
 .container {
@@ -20,11 +17,12 @@
     display: grid;
     gap: 15px;
     grid-template-columns: 1fr;
-    margin-top: 250px;
+    margin-top: 200px;
+    /* El margin-top puedes ajustarlo según necesites para que no esté pegado al borde superior */
 }
 
 .container button {
-    padding: 20px 20px;
+    padding: 20px 100px;
     font-size: 17px;
     font-weight: bold;
 }
@@ -39,7 +37,6 @@
 .section {
     margin: 0;
     padding: 0;
-
 }
 
 .hr {
@@ -48,7 +45,7 @@
     border-top: 1px solid #ddd;
 }
 
-/*efectos*/
+/* Efectos */
 .espereContainer {
     display: flex;
     justify-content: center;
@@ -56,32 +53,21 @@
     position: fixed;
     top: 0;
     left: 0;
-    /* Asegura que se alinee desde la izquierda */
     width: 100%;
     height: 100vh;
-    /* Ocupa toda la altura de la pantalla */
     background-color: rgba(0, 0, 0, 0.5);
-    /* Fondo oscuro semi-transparente */
     z-index: 9999;
     flex-direction: column;
-    /* Para que el texto esté debajo del spinner */
 }
 
 .spinner {
     border: 16px solid #f3f3f3;
-    /* Fondo gris claro */
     border-top: 16px solid #89a5eb;
-    /* Color del spinner */
     border-radius: 50%;
-    /* Hace que el borde sea redondo */
     width: 100px;
-    /* Tamaño del spinner */
     height: 100px;
-    /* Tamaño del spinner */
     animation: spin 2s linear infinite;
-    /* Animación para que gire */
     margin-bottom: 20px;
-    /* Espacio entre el spinner y el texto */
 }
 
 @keyframes spin {
@@ -98,18 +84,18 @@
     display: none;
 }
 
+/* Body de la página */
 .bodya {
     background-image: url('/fondo.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    height: 100vh;
-    /* Esto asegura que el fondo cubra toda la pantalla */
+    min-height: 100vh;  /* Asegura que ocupe toda la altura de la ventana */
+    display: flex;
+    flex-direction: column;  /* Organiza los elementos de arriba hacia abajo */
+    justify-content: space-between;  /* Empuja el contenido hacia arriba y el footer hacia abajo */
     margin: 0;
-    /* Elimina cualquier margen por defecto */
     padding: 0;
-    height: 100%;
-    /* Esto asegura que el body ocupe toda la altura de la ventana */
     overflow-x: hidden;
-    min-height: 100vh;
+    height: 100%;
 }

@@ -207,54 +207,54 @@ export default function Tablero() {
     }, [socket])
 
     async function arriesgar() {
-    if (nombreArriesgado.trim() === "") {
-        alert("Ingresá un nombre antes de arriesgar");
-        return;
-    }
-
-    const jugadorId = localStorage.getItem("ID");
-
-    setLoading(true);
-    const partida_id = localStorage.getItem("partida_id");
-
-    console.log("esta es la partida en curso: ", partida_id);
-
-    try {
-        const res = await fetch("http://localhost:4000/arriesgar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                id_partida: partida_id,
-                id_jugador: jugadorId,
-                nombre_arriesgado: nombreArriesgado
-            }),
-        });
-
-        const result = await res.json();
-
-        // Actualizar el mensaje en el estado
-        setMensaje(result.mensaje);
-
-        if (result.ok) {
-            if (result.gano) {
-                alert(`¡Ganaste! El personaje correcto era ${result.personajeCorrecto}.`);
-            } else {
-                alert(`Perdiste. El personaje correcto era ${result.personajeCorrecto}.`);
-            }
-
-            // Si el jugador ganó o perdió, redirigir a la página de inicio
-            router.push("/inicio");
-        } else {
-            alert("Hubo un problema al realizar el arriesgue.");
+        if (nombreArriesgado.trim() === "") {
+            alert("Ingresá un nombre antes de arriesgar");
+            return;
         }
 
-    } catch (error) {
-        console.error(error);
-        alert("Error al conectar con el servidor");
-    }
+        const jugadorId = localStorage.getItem("ID");
 
-    setLoading(false);
-}
+        setLoading(true);
+        const partida_id = localStorage.getItem("partida_id");
+
+        console.log("esta es la partida en curso: ", partida_id);
+
+        try {
+            const res = await fetch("http://localhost:4000/arriesgar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id_partida: partida_id,
+                    id_jugador: jugadorId,
+                    nombre_arriesgado: nombreArriesgado
+                }),
+            });
+
+            const result = await res.json();
+
+            // Actualizar el mensaje en el estado
+            setMensaje(result.mensaje);
+
+            if (result.ok) {
+                if (result.gano) {
+                    alert(`¡Ganaste! El personaje correcto era ${result.personajeCorrecto}.`);
+                } else {
+                    alert(`Perdiste. El personaje correcto era ${result.personajeCorrecto}.`);
+                }
+
+                // Si el jugador ganó o perdió, redirigir a la página de inicio
+                router.push("/inicio");
+            } else {
+                alert("Hubo un problema al realizar el arriesgue.");
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("Error al conectar con el servidor");
+        }
+
+        setLoading(false);
+    }
 
 
     useEffect(() => {

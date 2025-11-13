@@ -184,8 +184,15 @@
 }
 
 .turno-jugador1 {
-  background-color: #a8b8e2;
+  background-image: url('/fondoJuego.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
+
 .turno-jugador2 {
-  background-color: #5d70a0;
+  background-image: url('/fondoJuego2.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }

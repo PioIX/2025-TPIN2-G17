@@ -37,6 +37,7 @@ export default function Tablero() {
     const [jugador, setJugador] = useState(""); //Esto es para saber que jugador soy, asi cuando es mi turno juego yo
 
     const [segundos, setSegundos] = useState(60);
+    const [colorFondo, setColorFondo] = useState('turno-jugador1');
 
     //timer
     useEffect(() => {
@@ -114,7 +115,7 @@ export default function Tablero() {
                 setJugador("jugador1")
             }
             const room = localStorage.getItem("room")
-            socket.emit('reiniciarTemporizador', {room: room})
+            socket.emit('reiniciarTemporizador', { room: room })
         }
     }, [idPropio, idRival])
 
@@ -144,7 +145,16 @@ export default function Tablero() {
             setTurno(nuevoTurno); // Cambia el turno del jugador local
         });
 
-        return () => socket.off("cambiarTurno"); // Limpia el mismo evento
+        socket.on('cambiarFondo', ({ colorFondo }) => {
+            // Actualizar el estado con el color de fondo
+            setColorFondo(colorFondo);
+        });
+
+        return () => {
+            socket.off('cambiarTurno');
+            socket.off('cambiarFondo');
+        };
+
     }, [socket]);
 
 
@@ -205,18 +215,12 @@ export default function Tablero() {
         const jugadorId = localStorage.getItem("ID");
 
         setLoading(true);
-
         const partida_id = localStorage.getItem("partida_id");
-        console.log("esta es la partida en curso: ", partida_id)
 
-        console.log("🔍 partida_id desde localStorage:", partida_id);
-        console.log("🔍 miJugadorId:", jugadorId);
-        console.log("🔍 nombreArriesgado:", nombreArriesgado);
-        console.log("🔍 Todo el localStorage:", localStorage);
-
+        console.log("esta es la partida en curso: ", partida_id);
 
         try {
-            const res = await fetch(url + "/arriesgar", {
+            const res = await fetch("http://localhost:4000/arriesgar", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -226,13 +230,6 @@ export default function Tablero() {
                 }),
             });
 
-            result = await res.json();
-            //aca
-            /*
-            localStorage.setItem("partida_id", JSON.stringify(result.id_partida))
-            //const partidaa = JSON.parse(localStorage.getItem("partida"));
-            console.log("Partida almacenada en localStorage:", localStorage.getItem("partida_id"));
-            */
             const result = await res.json();
 
             // Actualizar el mensaje en el estado
@@ -241,12 +238,9 @@ export default function Tablero() {
             if (result.ok) {
                 if (result.gano) {
                     alert(`¡Ganaste! El personaje correcto era ${result.personajeCorrecto}.`);
-                    reiniciarTemporizador()
                 } else {
                     alert(`Perdiste. El personaje correcto era ${result.personajeCorrecto}.`);
-                    reiniciarTemporizador()
                 }
-
 
                 // Si el jugador ganó o perdió, redirigir a la página de inicio
                 router.push("/inicio");
@@ -257,12 +251,11 @@ export default function Tablero() {
         } catch (error) {
             console.error(error);
             alert("Error al conectar con el servidor");
-            reiniciarTemporizador()
         }
-
 
         setLoading(false);
     }
+
 
     useEffect(() => {
         console.log("🔍 Verificando localStorage al cargar página:");
@@ -348,7 +341,7 @@ export default function Tablero() {
                 return;
             }
 
-            const response = await fetch(url + `/random?partida_id=${partida_id}&jugador_id=${jugador_id}`, {
+            const response = await fetch(`http://localhost:4000/random?partida_id=${partida_id}&jugador_id=${jugador_id}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
@@ -356,23 +349,28 @@ export default function Tablero() {
             const data = await response.json();
             console.log("Data recibida del backend:", data);
 
-
             if (data.ok) {
                 const carta = Array.isArray(data.carta) ? data.carta[0] : data.carta;
+                const carta2 = Array.isArray(data.carta2) ? data.carta2[0] : data.carta2;
 
                 setCartaAsignada(carta);
+                setCartaAsignada2(carta2);
                 localStorage.setItem("carta", JSON.stringify(carta));
+                localStorage.setItem("carta2", JSON.stringify(carta2));
 
                 console.log("Mi carta asignada:", carta);
             } else {
                 setCartaAsignada(null);
+                setCartaAsignada2(null);
                 console.error("Error:", data.mensaje);
             }
         } catch (error) {
             console.error("Error al traer cartas:", error);
             setCartaAsignada(null);
+            setCartaAsignada2(null);
         }
     }
+
 
     //salir
 
@@ -416,8 +414,20 @@ export default function Tablero() {
         return () => socket.off("jugadorSalio");
     }, [socket]);
 
+    function handleEnterArriesgar(event) {
+        if (event.key === "Enter") {
+            arriesgar()
+        }
+    }
+
+    function handleEnterPreguntar(event) {
+        if (event.key === "Enter") {
+            sendMessage()
+        }
+    }
+
     return (
-        <>
+        <div className={`${styles.bodya} ${colorFondo ? styles[colorFondo] : ''}`}>
             <div className={styles.header}>
                 <header>
                     <Title texto={"¿Quién es quién?"} />
@@ -458,32 +468,29 @@ export default function Tablero() {
             <div className={styles.botonesRespuestas}>
                 {(turno === "jugador1" && jugador === "jugador1") || (turno === "jugador2" && jugador === "jugador2") ? (
                     <>
-                        {/* Si es el turno del jugador, mostrar el input para hacer una pregunta */}
-
                         <Input
                             placeholder={"Hace una pregunta"}
                             color={"registro"}
                             onChange={(e) => setMessage(e.target.value)}
+                            onKeyDown={handleEnterPreguntar}
                         />
                         <Boton
                             color={"wpp"}
                             texto={"Preguntar"}
                             onClick={() => {
                                 sendMessage(); // Enviar el mensaje
-                                // No cambiar el turno aún, esperar la respuesta del oponente
                             }}
                         />
-
                     </>
                 ) : (turno === "jugador2" && jugador === "jugador1") || (turno === "jugador1" && jugador === "jugador2") ? (
                     <>
-                        {/* Si es el turno del oponente, mostrar los botones de respuesta */}
                         {responder()}
                     </>
                 ) : null}
             </div>
+
             <div className={styles.arriesgarr}>
-                <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)}></Input>
+                <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)} onKeyDown={handleEnterArriesgar}></Input>
                 <Boton color={"wpp"} texto={"Arriesgar"} onClick={arriesgar}></Boton>
             </div>
 
@@ -499,14 +506,14 @@ export default function Tablero() {
                 )}
             </div>
 
-
             <div className={styles.footer}>
                 <footer>
                     <h2>Arrufat - Gaetani - Suarez - Zuran</h2>
                 </footer>
             </div>
-        </>
+        </div>
     );
+
 
 
 }
