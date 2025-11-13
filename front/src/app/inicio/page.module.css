@@ -1,6 +1,6 @@
-
+/*
 .footer {
-    background-color: #89a5eb;
+    background-color: #eba089;
     padding: 20px 0;
     text-align: center;
     color: white;
@@ -9,6 +9,19 @@
     left: 0;
     width: 100%;
     margin: 0;
+}*/
+
+.footer {
+    background-color: #eba089;
+    color: white;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px 0 10px 0;
+    /* Ajusta el padding superior para bajarlo un poquito */
+    text-align: center;
+    /* Centra el texto, si lo necesitas */
 }
 
 .container {
@@ -23,8 +36,9 @@
 }
 
 .container button {
-    padding: 10px 20px; /* Hace los botones más pequeños */
-    font-size: 14px; /* Ajusta el tamaño de la fuente de los botones */
+    padding: 20px 20px;
+    font-size: 17px;
+    font-weight: bold;
 }
 
 .title {
@@ -101,6 +115,13 @@
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    height: 100vh; /* Esto asegura que el fondo cubra toda la pantalla */
-    margin: 0; /* Elimina cualquier margen por defecto */
+    height: 100vh;
+    /* Esto asegura que el fondo cubra toda la pantalla */
+    margin: 0;
+    /* Elimina cualquier margen por defecto */
+    padding: 0;
+    height: 100%;
+    /* Esto asegura que el body ocupe toda la altura de la ventana */
+    overflow-x: hidden;
+    min-height: 100vh;
 }
