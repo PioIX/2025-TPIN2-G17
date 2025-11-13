@@ -40,7 +40,7 @@ const io = require('socket.io')(server, {
             "http://10.1.5.162:3000",
             "http://10.1.5.91:3000",
             "http://10.1.5.140:3000",
-            "http://10.1.5.93:3000", 
+            "http://10.1.5.93:3000",
             "http://192.168.56.1:3000",
             "http://10.1.4.88:3000",
         ],
@@ -163,6 +163,8 @@ io.on("connection", (socket) => {
         io.to(room).emit('cambiarTurno', { room, nuevoTurno });
         console.log(`🔄 Cambio de turno en ${room}: ${nuevoTurno}`);
         reiniciarTemporizador(room);
+        const colorFondo = nuevoTurno === 'jugador1' ? 'turno-jugador1' : 'turno-jugador2';
+        io.to(room).emit('cambiarFondo', { colorFondo });
     });
 
     socket.on('idJugadores', ({ room, id, idRival }) => {
@@ -252,7 +254,6 @@ app.post('/login', async function (req, res) {
         });
     }
 });
-
 
 //registro
 app.post('/registro', async function (req, res) {

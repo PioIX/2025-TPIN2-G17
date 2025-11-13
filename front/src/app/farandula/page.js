@@ -37,6 +37,7 @@ export default function Tablero() {
     const [jugador, setJugador] = useState(""); //Esto es para saber que jugador soy, asi cuando es mi turno juego yo
 
     const [segundos, setSegundos] = useState(60);
+    const [colorFondo, setColorFondo] = useState('turno-jugador1');
 
     //timer
     useEffect(() => {
@@ -114,7 +115,7 @@ export default function Tablero() {
                 setJugador("jugador1")
             }
             const room = localStorage.getItem("room")
-            socket.emit('reiniciarTemporizador', {room: room})
+            socket.emit('reiniciarTemporizador', { room: room })
         }
     }, [idPropio, idRival])
 
@@ -144,7 +145,16 @@ export default function Tablero() {
             setTurno(nuevoTurno); // Cambia el turno del jugador local
         });
 
-        return () => socket.off("cambiarTurno"); // Limpia el mismo evento
+        socket.on('cambiarFondo', ({ colorFondo }) => {
+            // Actualizar el estado con el color de fondo
+            setColorFondo(colorFondo);
+        });
+
+        return () => {
+            socket.off('cambiarTurno');
+            socket.off('cambiarFondo');
+        };
+
     }, [socket]);
 
 
@@ -414,7 +424,7 @@ export default function Tablero() {
     }, [socket]);
 
     return (
-        <>
+        <div className={`${styles.bodya} ${colorFondo ? styles[colorFondo] : ''}`}>
             <div className={styles.header}>
                 <header>
                     <Title texto={"¿Quién es quién?"} />
@@ -455,8 +465,6 @@ export default function Tablero() {
             <div className={styles.botonesRespuestas}>
                 {(turno === "jugador1" && jugador === "jugador1") || (turno === "jugador2" && jugador === "jugador2") ? (
                     <>
-                        {/* Si es el turno del jugador, mostrar el input para hacer una pregunta */}
-
                         <Input
                             placeholder={"Hace una pregunta"}
                             color={"registro"}
@@ -467,20 +475,18 @@ export default function Tablero() {
                             texto={"Preguntar"}
                             onClick={() => {
                                 sendMessage(); // Enviar el mensaje
-                                // No cambiar el turno aún, esperar la respuesta del oponente
                             }}
                         />
-
                     </>
                 ) : (turno === "jugador2" && jugador === "jugador1") || (turno === "jugador1" && jugador === "jugador2") ? (
                     <>
-                        {/* Si es el turno del oponente, mostrar los botones de respuesta */}
                         {responder()}
                     </>
                 ) : null}
             </div>
+
             <div className={styles.arriesgarr}>
-                <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)}></Input>
+                <Input type="text" placeholder="Nombre del personaje" id="arriesgar" color="registro" onChange={(e) => setNombreArriesgado(e.target.value)} />
                 <Boton color={"wpp"} texto={"Arriesgar"} onClick={arriesgar}></Boton>
             </div>
 
@@ -496,14 +502,14 @@ export default function Tablero() {
                 )}
             </div>
 
-
             <div className={styles.footer}>
                 <footer>
                     <h2>Arrufat - Gaetani - Suarez - Zuran</h2>
                 </footer>
             </div>
-        </>
+        </div>
     );
+
 
 
 }

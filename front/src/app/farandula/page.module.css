@@ -182,3 +182,10 @@
   left: 20px;
   z-index: 10;
 }
+
+.turno-jugador1 {
+  background-color: #a8b8e2;
+}
+.turno-jugador2 {
+  background-color: #5d70a0;
+}
