@@ -25,7 +25,7 @@ app.use(cors());
 
 //Pongo el servidor a escuchar
 const server = app.listen(port, function () {
-    console.log(`Server running in http://localhost:${port}
+    console.log(`Server running in http://10.1.4.20:${port}
         `);
 });
 
@@ -40,7 +40,7 @@ const io = require('socket.io')(server, {
             "http://10.1.5.162:3000",
             "http://10.1.5.91:3000",
             "http://10.1.5.140:3000",
-            "http://10.1.5.93:3000", 
+            "http://10.1.5.93:3000",
             "http://192.168.56.1:3000",
             "http://10.1.4.88:3000",
         ],
@@ -493,8 +493,10 @@ app.get('/random', async (req, res) => {
             return res.json({ ok: false, mensaje: "Partida no encontrada" });
         }
 
+        // Determina si el jugador es el jugador1 o el jugador2
         const esJugador1 = parseInt(jugador_id) === partida.jugador1_id;
 
+        // Obtener la carta del jugador
         const miPersonajeId = esJugador1
             ? partida.personaje_jugador1_id
             : partida.personaje_jugador2_id;
@@ -507,15 +509,28 @@ app.get('/random', async (req, res) => {
             return res.json({ ok: false, mensaje: "No se encontró el personaje" });
         }
 
+        // Obtener la carta del oponente
+        const oponentePersonajeId = esJugador1
+            ? partida.personaje_jugador2_id
+            : partida.personaje_jugador1_id;
+
+        const [oponentePersonaje] = await realizarQuery(`
+            SELECT * FROM Personajes WHERE ID = ${oponentePersonajeId}
+        `);
+
         res.json({
             ok: true,
             carta: [{
                 id: miPersonaje.ID,
                 nombre: miPersonaje.nombre,
                 foto: miPersonaje.foto,
-            }]
+            }],
+            carta2: [{
+                id: oponentePersonaje.ID,
+                nombre: oponentePersonaje.nombre,
+                foto: oponentePersonaje.foto,
+            }],
         });
-
 
     } catch (error) {
         console.error("Error en la consulta:", error);
@@ -526,6 +541,7 @@ app.get('/random', async (req, res) => {
         });
     }
 });
+
 
 
 //agregar chats
@@ -959,27 +975,21 @@ app.post('/crearPartida', async (req, res) => {
 app.post("/arriesgar", async (req, res) => {
     const { id_partida, id_jugador, nombre_arriesgado } = req.body;
 
-
     try {
         const [partida] = await realizarQuery(`SELECT * FROM Partidas WHERE ID = ${id_partida}`);
         if (!partida) return res.send({ ok: false, mensaje: "Partida no encontrada" });
 
-
         const esJugador1 = id_jugador === partida.jugador1_id;
         const personajeOponenteId = esJugador1
             ? partida.personaje_jugador2_id
-
             : partida.personaje_jugador1_id;
-
 
         const id_oponente = esJugador1 ? partida.jugador2_id : partida.jugador1_id;
 
         const [personajeOponente] = await realizarQuery(`SELECT * FROM Personajes WHERE ID = ${personajeOponenteId}`);
         if (!personajeOponente) return res.send({ ok: false, mensaje: "No se encontró el personaje del oponente" });
 
-
         if (nombre_arriesgado.trim().toLowerCase() === personajeOponente.nombre.trim().toLowerCase()) {
-
             await realizarQuery(`
                 UPDATE Partidas
                 SET ganador_id = ${id_jugador}, estado = 'finalizada'
@@ -1031,6 +1041,7 @@ app.post("/arriesgar", async (req, res) => {
         res.status(500).send({ ok: false, mensaje: "Error en el servidor" });
     }
 });
+
 
 //salir de partida
 app.put('/salir', async function (req, res) {
