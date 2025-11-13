@@ -74,14 +74,26 @@ export default function LoginPage() {
     }
   }
 
+  function handleEnter(event) {
+    if (event.key === "Enter") {
+      obtenerDatos()
+    }
+  }
+  
+  function handleEnterRegister(event) {
+    if (event.key === "Enter") {
+      obtenerDatosRegistro()
+    }
+  }
+
   return (
     <>
       <div className={styles.section}>
         <div className={styles.container}>
           <Title texto="Inicia Sesión" color={"registro"} /><h3></h3><br />
-          <Input color={"registro"} type={"text"} placeholder={"Ingrese su nombre"} id={"nombre"} onChange={(event) => setNombre(event.target.value)}></Input>
+          <Input color={"registro"} type={"text"} placeholder={"Ingrese su nombre"} id={"nombre"} onChange={(event) => setNombre(event.target.value)} ></Input>
           <br /><br />
-          <Input color={"registro"} type={"password"} placeholder={"Ingrese su contraseña"} id={"contraseña"} onChange={(event) => setContraseña(event.target.value)}></Input>
+          <Input color={"registro"} type={"password"} placeholder={"Ingrese su contraseña"} id={"contraseña"} onChange={(event) => setContraseña(event.target.value)} onKeyDown={handleEnter}></Input>
           <br /><br />
           <Boton1 type={"text"} texto={"Enviar"} color={"wpp"} onClick={obtenerDatos}>Enviar</Boton1>
         </div>
@@ -93,7 +105,7 @@ export default function LoginPage() {
           <br /><br />
           <Input color={"registro"} type={"password"} placeholder={"Ingrese su contraseña"} id={"contraseña"} onChange={(event) => setContraseña(event.target.value)}></Input>
           <br /><br />
-          <Input color={"registro"} type={"text"} placeholder={"Ingrese su nombre"} id={"nombre"} onChange={(event) => setNombre(event.target.value)}></Input>
+          <Input color={"registro"} type={"text"} placeholder={"Ingrese su nombre"} id={"nombre"} onChange={(event) => setNombre(event.target.value)} onKeyDown={handleEnterRegister}></Input>
           <br /><br />
           <Boton1 type={"text"} texto={"Enviar"} color={"wpp"} onClick={obtenerDatosRegistro}>Enviar</Boton1>
         </div>
