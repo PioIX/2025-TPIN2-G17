@@ -25,7 +25,7 @@ app.use(cors());
 
 //Pongo el servidor a escuchar
 const server = app.listen(port, function () {
-    console.log(`Server running in http://10.1.4.147:${port}
+    console.log(`Server running in http://10.1.4.87:${port}
         `);
 });
 
@@ -546,6 +546,7 @@ app.get('/random', async (req, res) => {
 
 
 
+
 //agregar chats
 app.post("/agregarChat", async function (req, res) {
     try {
@@ -1043,6 +1044,7 @@ app.post("/arriesgar", async (req, res) => {
         res.status(500).send({ ok: false, mensaje: "Error en el servidor" });
     }
 });
+
 
 
 //salir de partida

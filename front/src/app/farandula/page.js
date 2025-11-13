@@ -257,6 +257,7 @@ export default function Tablero() {
     }
 
 
+
     useEffect(() => {
         console.log("🔍 Verificando localStorage al cargar página:");
         console.log("partida_id:", localStorage.getItem("partida_id"));
@@ -370,6 +371,7 @@ export default function Tablero() {
             setCartaAsignada2(null);
         }
     }
+
 
 
     //salir
