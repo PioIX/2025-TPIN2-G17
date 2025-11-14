@@ -25,7 +25,7 @@ app.use(cors());
 
 //Pongo el servidor a escuchar
 const server = app.listen(port, function () {
-    console.log(`Server running in http://192.168.0.82:${port}
+    console.log(`Server running in http://10.1.5.103:${port}
         `);
 });
 
@@ -45,6 +45,7 @@ const io = require('socket.io')(server, {
             "http://10.1.4.88:3000",
             "http://10.1.4.147:3000",
             "http://192.168.0.82:3000",
+            "http://10.1.5.103:3000",
         ],
 
         methods: ["GET", "POST", "PUT", "DELETE"],      // Métodos permitidos
