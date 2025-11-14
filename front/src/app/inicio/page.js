@@ -79,46 +79,87 @@ export default function LoginPage() {
         }
         setLoading(false); // Termina el estado de carga
     }
+    /*
+        useEffect(() => {
+            if (socket) {
+                socket.on("partidaCreada", (data) => {
+                    console.log("📥 Evento recibido:", data);
+    
+                    const miId = Number(localStorage.getItem("ID"));
+                    console.log("🔍 Mi ID:", miId, "| Host:", data.userHost);
+    
+                    if (data.ok && !data.esperando) {
+                        if (data.partida_id) {
+    
+                            data.jugadores.map((id) => {
+                                if (id != miId) {
+                                    localStorage.setItem("oponente_id", id);
+                                }
+                            });
+                            localStorage.setItem("partida_id", data.partida_id);
+                            console.log("partida_id guardado:", data.partida_id);
+                        }
+    
+                        setMensaje("¡La partida ha comenzado!");
+                        router.push(`/${data.nombreCategoria}`);
+                    } else if (data.esperando) {
+                        if (data.userHost == miId) {
+                            setMensaje("Esperando oponente...");
+                            console.log("esperando oponente:", mensaje)
+                        } else {
+                            console.log("No soy el host");
+                        }
+                    }
+                });
+    
+                console.log("EL MENSAJE ES:", mensaje)
+                return () => {
+                    socket.off("partidaCreada");
+    
+                };
+            }
+        }, [socket, router]);*/
 
     useEffect(() => {
-        if (socket) {
-            socket.on("partidaCreada", (data) => {
-                console.log("📥 Evento recibido:", data);
+        if (!socket) return;
 
-                const miId = Number(localStorage.getItem("ID"));
-                console.log("🔍 Mi ID:", miId, "| Host:", data.userHost);
+        socket.on("partidaCreada", (data) => {
+            const miId = Number(localStorage.getItem("ID"));
 
-                if (data.ok && !data.esperando) {
-                    if (data.partida_id) {
+            // Si se creó la partida completa (ya hay 2 jugadores)
+            if (data.ok && !data.esperando) {
 
-                        data.jugadores.map((id) => {
-                            if (id != miId) {
-                                localStorage.setItem("oponente_id", id);
-                            }
-                        });
-                        localStorage.setItem("partida_id", data.partida_id);
-                        console.log("partida_id guardado:", data.partida_id);
-                    }
-
-                    setMensaje("¡La partida ha comenzado!");
-                    router.push(`/${data.nombreCategoria}`);
-                } else if (data.esperando) {
-                    if (data.userHost == miId) {
-                        setMensaje("Esperando oponente...");
-                        console.log("esperando oponente:", mensaje)
-                    } else {
-                        console.log("No soy el host");
-                    }
+                // SOLO si existe el array jugadores
+                if (Array.isArray(data.jugadores)) {
+                    data.jugadores.forEach((id) => {
+                        if (id !== miId) {
+                            localStorage.setItem("oponente_id", id);
+                        }
+                    });
                 }
-            });
 
-            console.log("EL MENSAJE ES:", mensaje)
-            return () => {
-                socket.off("partidaCreada");
+                if (data.partida_id) {
+                    localStorage.setItem("partida_id", data.partida_id);
+                }
 
-            };
-        }
+                router.push(`/${data.nombreCategoria}`);
+                return;
+            }
+
+            // Si es el host y está esperando
+            if (data.esperando && data.userHost === miId) {
+                setMensaje("Esperando oponente...");
+                return;
+            }
+        });
+
+
+        return () => {
+            socket.off("partidaCreada");
+        };
     }, [socket, router]);
+
+
 
 
     const irFamosos = () => {

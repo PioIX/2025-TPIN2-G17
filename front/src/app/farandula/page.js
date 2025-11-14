@@ -213,6 +213,7 @@ export default function Tablero() {
         }
 
         const jugadorId = localStorage.getItem("ID");
+        const oponente_id = localStorage.getItem("oponente_id")
 
         setLoading(true);
         const partida_id = localStorage.getItem("partida_id");
@@ -220,12 +221,13 @@ export default function Tablero() {
         console.log("esta es la partida en curso: ", partida_id);
 
         try {
-            const res = await fetch("http://localhost:4000/arriesgar", {
+            const res = await fetch(url + "/arriesgar", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     id_partida: partida_id,
                     id_jugador: jugadorId,
+                    oponente_id: oponente_id,
                     nombre_arriesgado: nombreArriesgado
                 }),
             });

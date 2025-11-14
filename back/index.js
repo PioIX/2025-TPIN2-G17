@@ -25,7 +25,7 @@ app.use(cors());
 
 //Pongo el servidor a escuchar
 const server = app.listen(port, function () {
-    console.log(`Server running in http://10.1.4.87:${port}
+    console.log(`Server running in http://192.168.0.82:${port}
         `);
 });
 
@@ -43,7 +43,8 @@ const io = require('socket.io')(server, {
             "http://10.1.5.93:3000",
             "http://192.168.56.1:3000",
             "http://10.1.4.88:3000",
-            "http://10.1.4.147:3000"
+            "http://10.1.4.147:3000",
+            "http://192.168.0.82:3000",
         ],
 
         methods: ["GET", "POST", "PUT", "DELETE"],      // Métodos permitidos
@@ -282,59 +283,6 @@ app.post('/registro', async function (req, res) {
 })
 
 
-app.post("/chats", async function (req, res) {
-    try {
-        console.log(req.body)
-        const resultado = await realizarQuery(`
-            SELECT Chats.ID, Chats.nombre, Chats.foto, Chats.es_grupo
-            FROM Chats
-            INNER JOIN UsuariosPorChat ON UsuariosPorChat.id_chat = Chats.ID
-            WHERE UsuariosPorChat.id_usuario = "${req.body.id_usuario}"
-            AND Chats.nombre IS NOT NULL
-            AND Chats.nombre != ""
-            AND (Chats.es_grupo = 1 OR Chats.es_grupo = 0)
-
-
-        `);
-        res.send(resultado);
-    } catch (error) {
-        res.send({
-            ok: false,
-            mensaje: "Error en el servidor",
-            error: error.message
-        });
-    }
-});
-
-
-app.post("/traerUsuarios", async function (req, res) {
-    try {
-        console.log("BODY:", req.body);
-
-
-        const resultado = await realizarQuery(`
-            SELECT u.ID, u.nombre, upc.id_chat, u.foto_perfil
-            FROM Usuarios u
-            INNER JOIN UsuariosPorChat upc ON upc.id_usuario = u.ID
-            WHERE upc.id_chat IN (
-            SELECT id_chat
-            FROM UsuariosPorChat
-            WHERE id_usuario = ${req.body.id_usuario}
-            )
-            AND u.ID != ${req.body.id_usuario}
-            AND (u.nombre != "" AND u.nombre IS NOT NULL)
-        `);
-
-
-        console.log("RESULTADO:", resultado);
-        res.send(resultado);
-    } catch (error) {
-        console.error("ERROR traerUsuarios:", error.message);
-        res.send({ ok: false, mensaje: "Error en el servidor", error: error.message });
-    }
-});
-
-
 //JUEGO
 app.get('/farandula', async (req, res) => {
     try {
@@ -479,6 +427,7 @@ app.get('/profesores', async (req, res) => {
     }
 });
 
+/*
 app.get('/random', async (req, res) => {
     const { partida_id, jugador_id } = req.query;
 
@@ -542,171 +491,66 @@ app.get('/random', async (req, res) => {
             error: error.message
         });
     }
-});
+});*/
 
+app.get('/random', async (req, res) => {
+    const { partida_id, jugador_id } = req.query;
 
-
-
-//agregar chats
-app.post("/agregarChat", async function (req, res) {
     try {
-        let chatId;
-
-
-        if (req.body.es_grupo == 1) {
-            const nombre = req.body.nombre ?? "Grupo sin nombre";
-            // Insertar el grupo
-            const resultado = await realizarQuery(`
-       
-                INSERT INTO Chats (es_grupo, foto, nombre, descripcion_grupo)
-                VALUES (1, '${req.body.foto}', '${req.body.nombre}', '${req.body.descripcion_grupo}')
-            `);
-
-
-            chatId = resultado.insertId;
-
-
-            // Insertar al creador del grupo
-            await realizarQuery(`
-       
-            INSERT INTO UsuariosPorChat (id_chat, id_usuario)
-            VALUES (${chatId}, ${req.body.id_usuario})
-            `);
-
-
-            // Insertar a los demás usuarios por mail
-            for (const mail of req.body.mails) {
-                const usuarios = await realizarQuery(`
-          SELECT ID FROM Usuarios WHERE usuario_mail = '${mail}'
-        `);
-                if (usuarios.length > 0 && usuarios[0].ID != req.body.id_usuario) {
-                    const userId = usuarios[0].ID;
-                    await realizarQuery(`
-            INSERT INTO UsuariosPorChat (id_chat, id_usuario)
-            VALUES (${chatId}, ${userId})
-          `);
-                }
-            }
-
-
-            console.log(chatId)
-
-
-        } else {
-            // Insertar chat individual (campos vacíos salvo es_grupo = 0)
-            const resultado = await realizarQuery(`
-        INSERT INTO Chats (es_grupo, foto, nombre, descripcion_grupo)
-        VALUES (0, NULL, NULL, NULL)
-      `);
-            chatId = resultado.insertId;
-
-
-            // obtener id del otro usuario por mail
-            const usuarios = await realizarQuery(`
-        SELECT ID FROM Usuarios WHERE usuario_mail = '${req.body.mail}'
-      `);
-            const otroUsuarioId = usuarios[0].ID;
-
-
-            // vincular usuarios al chat
-            await realizarQuery(`
-        INSERT INTO UsuariosPorChat (id_chat, id_usuario)
-        VALUES (${chatId}, ${req.body.id_usuario}), (${chatId}, ${otroUsuarioId})
-      `);
+        if (!partida_id || !jugador_id) {
+            return res.json({ ok: false, mensaje: "Faltan parámetros" });
         }
 
-
-        res.send({ ok: true, id_chat: chatId });
-    } catch (error) {
-        res.status(500).send({
-            ok: false,
-            mensaje: "Error en el servidor",
-            error: error.message,
-        });
-    }
-});
-
-
-//traer contactos
-app.post('/contacto', async (req, res) => {
-    try {
-        const contactos = await realizarQuery(`
-            SELECT Chats.ID , Chats.nombre
-            FROM Chats
-            INNER JOIN UsuariosPorChat ON UsuariosPorChat.id_chat = Chats.ID
-            WHERE UsuariosPorChat.id_usuario = "${req.body.id_usuario}"
-
-
+        const [partida] = await realizarQuery(`
+            SELECT * FROM Partidas WHERE ID = ${partida_id}
         `);
 
-
-        if (contactos.length === 0) {
-            return res.send({ ok: false, mensaje: "No se encontró el contacto" });
+        if (!partida) {
+            return res.json({ ok: false, mensaje: "Partida no encontrada" });
         }
-        const contacto = contactos[0];
 
+        // Determina si el jugador es 1 o 2 por la base
+        const esJugador1 = Number(jugador_id) === partida.jugador1_id;
 
-        res.send({
+        const miIdPersonaje = esJugador1
+            ? partida.personaje_jugador1_id
+            : partida.personaje_jugador2_id;
+
+        const oponenteIdPersonaje = esJugador1
+            ? partida.personaje_jugador2_id
+            : partida.personaje_jugador1_id;
+
+        const [miCarta] = await realizarQuery(`
+            SELECT * FROM Personajes WHERE ID = ${miIdPersonaje}
+        `);
+
+        const [cartaOponente] = await realizarQuery(`
+            SELECT * FROM Personajes WHERE ID = ${oponenteIdPersonaje}
+        `);
+
+        return res.json({
             ok: true,
-            contacto: {
-                ID: contacto.ID,
-                nombre: contacto.nombre,
-            }
+            carta: [{
+                id: miCarta.ID,
+                nombre: miCarta.nombre,
+                foto: miCarta.foto,
+            }],
+            carta2: [{
+                id: cartaOponente.ID,
+                nombre: cartaOponente.nombre,
+                foto: cartaOponente.foto,
+            }],
         });
 
-
     } catch (error) {
-        res.status(500).send({
-            ok: false,
-            mensaje: "Error en el servido ASDRAAAAAAA",
-            error: error.message,
-        });
-    }
-});
-
-
-//eliminar contactos
-app.post('/eliminarContacto', async function (req, res) {
-    try {
-        const { id_chat, id_usuario } = req.body;
-
-
-        await realizarQuery(
-            `DELETE FROM UsuariosPorChat WHERE id_chat=${id_chat} AND id_usuario=${id_usuario}`
-        );
-
-
-        res.send({ ok: true, mensaje: "Contacto eliminado del chat" });
-    } catch (error) {
-        res.status(500).send({
+        console.error("Error en la consulta:", error);
+        return res.status(500).json({
             ok: false,
             mensaje: "Error en el servidor",
             error: error.message
         });
     }
 });
-
-
-//subir mensajes a bbdd
-app.post('/mensajes', async (req, res) => {
-    try {
-        console.log("Datos recibidos:", req.body);
-        await realizarQuery(`
-                INSERT INTO Mensajes (contenido, fecha_hora, id_usuario, id_chat) VALUES
-            ("${req.body.contenido}","${req.body.fecha_hora}",${req.body.id_usuario},${req.body.id_chat});`
-        );
-
-
-        res.send({ res: "ok", agregado: true });
-    } catch (e) {
-        res.status(500).send({
-            agregado: false,
-            mensaje: "Error en el servidor",
-            error: e.message
-        });
-    }
-});
-
 
 
 
@@ -737,30 +581,6 @@ app.get('/infoUsuario', async (req, res) => {
         res.status(500).send({ ok: false, mensaje: "Error en el servidor", error: error.message });
     }
 });
-
-
-app.post('/encontrarMensajesChat', async (req, res) => {
-    const { chatSeleccionadoId } = req.body;
-    console.log("Body recibido:", req.body);
-
-
-    try {
-        const respuesta = await realizarQuery(`
-            SELECT Mensajes.id_chat, Mensajes.id_usuario, Mensajes.contenido, Mensajes.fecha_hora, Usuarios.nombre
-            FROM Mensajes
-            INNER JOIN Usuarios ON Usuarios.ID = Mensajes.id_usuario
-            WHERE Mensajes.id_chat = "${chatSeleccionadoId}"
-            ORDER BY Mensajes.fecha_hora ASC
-        `);
-
-
-        res.json({ ok: true, mensajes: respuesta });
-    } catch (error) {
-        console.error("Error al traer mensajes:", error);
-        res.status(500).send({ ok: false, mensaje: "Error en el servidor", error: error.message });
-    }
-});
-
 
 
 
@@ -939,8 +759,9 @@ app.post('/crearPartida', async (req, res) => {
                 mensaje: "Partida creada con éxito",
                 nombreCategoria,
                 userHost: Number(jugador1_id),
-                jugadores: [Number(jugador1_id), Number(oponente[0].ID)],
-                partida_id: partida_id, // 👈 Ahora es un número
+                jugador1: Number(jugador1_id),
+                jugador2: Number(jugador2_id),
+                partida_id: partida_id,
             });
 
 
@@ -973,30 +794,62 @@ app.post('/crearPartida', async (req, res) => {
 
 
 //arriesgar personaje
-
-
 app.post("/arriesgar", async (req, res) => {
-    const { id_partida, id_jugador, nombre_arriesgado } = req.body;
+    let { id_partida, id_jugador, nombre_arriesgado } = req.body;
 
     try {
-        const [partida] = await realizarQuery(`SELECT * FROM Partidas WHERE ID = ${id_partida}`);
-        if (!partida) return res.send({ ok: false, mensaje: "Partida no encontrada" });
+        id_partida = Number(id_partida);
+        id_jugador = Number(id_jugador);
 
-        const esJugador1 = id_jugador === partida.jugador1_id;
+        if (!id_partida || !id_jugador) {
+            return res.send({ ok: false, mensaje: "Datos inválidos" });
+        }
+
+        // Traer la partida
+        const [partida] = await realizarQuery(`
+            SELECT * FROM Partidas WHERE ID = ${id_partida}
+        `);
+
+        if (!partida) {
+            return res.send({ ok: false, mensaje: "Partida no encontrada" });
+        }
+
+        const jugador1 = Number(partida.jugador1_id);
+        const jugador2 = Number(partida.jugador2_id);
+
+        const esJugador1 = id_jugador === jugador1;
+
+        // 🔥 Oponente SIEMPRE ES EL OTRO
+        const id_oponente = esJugador1 ? jugador2 : jugador1;
+
+        // 🔥 Ahora sí, personaje del oponente (NO EL TUYO)
         const personajeOponenteId = esJugador1
-            ? partida.personaje_jugador2_id
-            : partida.personaje_jugador1_id;
+            ? Number(partida.personaje_jugador2_id)
+            : Number(partida.personaje_jugador1_id);
 
-        const id_oponente = esJugador1 ? partida.jugador2_id : partida.jugador1_id;
+        const [personajeOponente] = await realizarQuery(`
+            SELECT * FROM Personajes WHERE ID = ${personajeOponenteId}
+        `);
 
-        const [personajeOponente] = await realizarQuery(`SELECT * FROM Personajes WHERE ID = ${personajeOponenteId}`);
-        if (!personajeOponente) return res.send({ ok: false, mensaje: "No se encontró el personaje del oponente" });
+        if (!personajeOponente) {
+            return res.send({
+                ok: false,
+                mensaje: "No se encontró el personaje del oponente"
+            });
+        }
 
-        if (nombre_arriesgado.trim().toLowerCase() === personajeOponente.nombre.trim().toLowerCase()) {
+        // Normalizamos para comparar
+        const guess = nombre_arriesgado.trim().toLowerCase();
+        const correcto = personajeOponente.nombre.trim().toLowerCase();
+
+        const acierto = (guess === correcto);
+
+        // 🔥 SI ACERTÓ, GANA EL JUGADOR QUE ARRIESGÓ
+        if (acierto) {
             await realizarQuery(`
                 UPDATE Partidas
                 SET ganador_id = ${id_jugador}, estado = 'finalizada'
-                WHERE ID = ${id_partida};
+                WHERE ID = ${id_partida}
             `);
 
             io.emit("partidaFinalizada", {
@@ -1014,36 +867,39 @@ app.post("/arriesgar", async (req, res) => {
                 id_partida,
                 id_jugador
             });
-        } else {
-            const ganador = esJugador1 ? partida.jugador2_id : partida.jugador1_id;
-            await realizarQuery(`
-                UPDATE Partidas
-                SET ganador_id = ${ganador}, estado = 'finalizada'
-                WHERE ID = ${id_partida};
-            `);
-
-            io.emit("partidaFinalizada", {
-                id_partida,
-                ganador_id: ganador,
-                perdedor_id: id_jugador,
-                personajeCorrecto: personajeOponente.nombre,
-                mensaje: "¡La partida ha finalizado!"
-            });
-
-            return res.send({
-                ok: true,
-                gano: false,
-                personajeCorrecto: personajeOponente.nombre,
-                id_partida,
-                id_jugador
-            });
         }
+
+        // ❌ SI FALLÓ, GANA EL OPONENTE
+        await realizarQuery(`
+            UPDATE Partidas
+            SET ganador_id = ${id_oponente}, estado = 'finalizada'
+            WHERE ID = ${id_partida}
+        `);
+
+        io.emit("partidaFinalizada", {
+            id_partida,
+            ganador_id: id_oponente,
+            perdedor_id: id_jugador,
+            personajeCorrecto: personajeOponente.nombre,
+            mensaje: "¡La partida ha finalizado!"
+        });
+
+        return res.send({
+            ok: true,
+            gano: false,
+            personajeCorrecto: personajeOponente.nombre,
+            id_partida,
+            id_jugador
+        });
 
     } catch (err) {
         console.error(err);
-        res.status(500).send({ ok: false, mensaje: "Error en el servidor" });
+        return res.status(500).send({
+            ok: false, mensaje: "Error del servidor", error: err.message
+        });
     }
 });
+
 
 
 
