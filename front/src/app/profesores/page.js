@@ -23,19 +23,14 @@ export default function Tablero() {
     const [nombreArriesgado, setNombreArriesgado] = useState("");
     const [mensaje, setMensaje] = useState("");
     const [loading, setLoading] = useState(false);
-    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
-    const [carta, setCarta] = useState(null);
     const [personajes, setPersonajes] = useState([]);
     const [descartadas, setDescartadas] = useState([]);
     const [cartaAsignada, setCartaAsignada] = useState([]);
     const [cartaAsignada2, setCartaAsignada2] = useState([]);
-    const [contador, setContador] = useState(0)
-    const [turno, setTurno] = useState("jugador1");  // Define cuál jugador tiene el turno
+    const [turno, setTurno] = useState("jugador1");  
     const [idPropio, setIdPropio] = useState();
     const [idRival, setIdRival] = useState();
-    const [flagYaEnvie, setFlagYaEnvie] = useState(0);
-    const [jugador, setJugador] = useState(""); //Esto es para saber que jugador soy, asi cuando es mi turno juego yo
-
+    const [jugador, setJugador] = useState(""); 
     const [segundos, setSegundos] = useState(60);
     const [colorFondo, setColorFondo] = useState('turno-jugador1');
 
@@ -61,7 +56,7 @@ export default function Tablero() {
 
     async function traerPersonajes() {
         try {
-            const response = await fetch(url + "/profesores", {
+            const response = await fetch(url + "/farandula", {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
@@ -213,6 +208,7 @@ export default function Tablero() {
         }
 
         const jugadorId = localStorage.getItem("ID");
+        const oponente_id = localStorage.getItem("oponente_id")
 
         setLoading(true);
         const partida_id = localStorage.getItem("partida_id");
@@ -220,12 +216,13 @@ export default function Tablero() {
         console.log("esta es la partida en curso: ", partida_id);
 
         try {
-            const res = await fetch("http://localhost:4000/arriesgar", {
+            const res = await fetch(url + "/arriesgar", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     id_partida: partida_id,
                     id_jugador: jugadorId,
+                    oponente_id: oponente_id,
                     nombre_arriesgado: nombreArriesgado
                 }),
             });
@@ -257,6 +254,7 @@ export default function Tablero() {
     }
 
 
+
     useEffect(() => {
         console.log("🔍 Verificando localStorage al cargar página:");
         console.log("partida_id:", localStorage.getItem("partida_id"));
@@ -273,17 +271,6 @@ export default function Tablero() {
         if (!socket) return;
         socket.on("partidaFinalizada", (data) => {
             console.log("📥 Partida finalizada:", data);
-
-            /*
-            const miId = Number(localStorage.getItem("ID"));
- 
-            if (data.ganador_id === miId) {
-                alert(`¡Ganaste! El personaje correcto era ${data.personajeCorrecto}.`);
-            } else if (data.perdedor_id === miId) {
-                alert(`Perdiste. El personaje correcto era ${data.personajeCorrecto}.`);
-            }
-            */
-
             localStorage.removeItem("partida_id");
             localStorage.removeItem("room");
             router.push("/inicio");
@@ -371,9 +358,7 @@ export default function Tablero() {
         }
     }
 
-
     //salir
-
     async function salida() {
         const partida_id = localStorage.getItem("partida_id");
         const room = localStorage.getItem("room");
@@ -436,7 +421,7 @@ export default function Tablero() {
 
             <div className={styles.tcontainer}>
                 <div className={styles.temporizador}>{segundos}</div>
-                <button onClick={reiniciarTemporizador}>Reiniciar Temporizador</button>
+                <Boton onClick={reiniciarTemporizador} color={"eliminar"} texto={"Reiniciar Temporizador"}></Boton>
             </div>
 
             <div className={styles.salir}>
@@ -513,8 +498,4 @@ export default function Tablero() {
             </div>
         </div>
     );
-
-
-
 }
-

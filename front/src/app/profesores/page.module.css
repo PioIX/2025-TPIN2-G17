@@ -184,14 +184,14 @@
 }
 
 .turno-jugador1 {
-  background-image: url('/fondoJuego.png');
+  background-image: url('/fondojuego1.png');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
 }
 
 .turno-jugador2 {
-  background-image: url('/fondoJuego2.png');
+  background-image: url('/fondojuego22.png');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
