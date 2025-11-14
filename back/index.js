@@ -486,10 +486,11 @@ app.get("/random", async (req, res) => {
     if (!partida_id || !jugador_id) {
       return res.json({ ok: false, mensaje: "Faltan parámetros" });
     }
-
-    const [partida] = await realizarQuery(`
+    const query = `
             SELECT * FROM Partidas WHERE ID = ${partida_id}
-        `);
+        `
+    console.log("Query de random: ", query, " valor de id_partida ", partida_id)
+    const [partida] = await realizarQuery(query);
 
     if (!partida) {
       return res.json({ ok: false, mensaje: "Partida no encontrada" });

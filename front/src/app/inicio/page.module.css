@@ -17,7 +17,7 @@
     display: grid;
     gap: 15px;
     grid-template-columns: 1fr;
-    margin-top: 200px;
+    margin-top: 250px;
     /* El margin-top puedes ajustarlo según necesites para que no esté pegado al borde superior */
 }
 

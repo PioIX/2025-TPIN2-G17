@@ -56,7 +56,7 @@ export default function Tablero() {
 
     async function traerPersonajes() {
         try {
-            const response = await fetch(url + "/farandula", {
+            const response = await fetch(url + "/profesores", {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
@@ -328,7 +328,7 @@ export default function Tablero() {
                 return;
             }
 
-            const response = await fetch(`http://localhost:4000/random?partida_id=${partida_id}&jugador_id=${jugador_id}`, {
+            const response = await fetch(url + `/random?partida_id=${partida_id}&jugador_id=${jugador_id}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
