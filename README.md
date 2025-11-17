@@ -18,11 +18,18 @@ El sistema asigna automáticamente un oponente y un personaje aleatorio a cada j
 
 Se muestran los personajes de la categoría con su nombre e imagen.
 
+<img width="829" height="575" alt="image" src="https://github.com/user-attachments/assets/9b1425d3-9977-4cc4-b9d8-05e29548db90" />
+
+
 Los jugadores pueden hacer preguntas de sí/no para ir descartando personajes.
+
+<img width="480" height="250" alt="image" src="https://github.com/user-attachments/assets/ac2431f8-ec10-43a7-9626-247a6342fc43" />
 
 Cuando un jugador está listo, puede arriesgar el personaje del oponente:
 
 Acierta: gana la partida
+
+<img width="504" height="169" alt="image" src="https://github.com/user-attachments/assets/ae456e1b-d0cd-46b4-8f5c-2c12553a1735" />
 
 Falla: pierde automáticamente
 
@@ -41,3 +48,6 @@ Sistema de arriesgar que determina automáticamente el ganador.
 Gestión de usuarios, incluyendo creación de cuentas y roles de administrador.
 
 Base de datos que almacena usuarios, personajes y partidas.
+
+<img width="207" height="98" alt="image" src="https://github.com/user-attachments/assets/34737995-82e8-427b-a231-61cac5589c78" />
+
