@@ -2,6 +2,8 @@
 🎮 Quién es Quién
 Descripción
 
+<img width="1353" height="643" alt="image" src="https://github.com/user-attachments/assets/a5f24b13-b345-4e4b-be02-7774893d402f" />
+
 “Quién es Quién” es un juego de adivinanza de personajes para dos jugadores. Cada jugador recibe un personaje aleatorio de una categoría seleccionada (cantantes, famosos, scaloneta, profesores y farándula) y debe descubrir quién le tocó al oponente mediante preguntas y deducción.
 
 Al final de la partida, uno de los jugadores (el que primero crea que lo sacó) puede arriesgar el personaje del adversario. Si acierta, gana; si falla, pierde automáticamente.
